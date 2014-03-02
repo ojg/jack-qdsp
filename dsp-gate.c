@@ -23,7 +23,7 @@ void gate_process(void * arg)
 
     for (i=0; i<dsp->nchannels; i++) {
         float max = 0;
-        float * restrict inbuf = dsp->inbufs[i];
+        float * inbuf = dsp->inbufs[i];
         for (n=0; n<dsp->nframes; n++) {
             if (max < fabsf(inbuf[n]))
                 max = fabsf(inbuf[n]);
@@ -39,8 +39,8 @@ void gate_process(void * arg)
         else if (state->holdcount[i] == holdthresh) {
             // attack
             float gainstep = 1.0f / dsp->nframes;
-            float * restrict inbuf = dsp->inbufs[i];
-            float * restrict outbuf = dsp->outbufs[i];
+            float * inbuf = dsp->inbufs[i];
+            float * outbuf = dsp->outbufs[i];
             float gain = 1.0f;
             for (n=0; n<dsp->nframes; n++) {
                 outbuf[n] = gain * inbuf[n];
@@ -51,8 +51,8 @@ void gate_process(void * arg)
         else if (state->holdcount[i] > holdthresh && max > state->threshold) {
             // release
             float gainstep = 1.0f / dsp->nframes;
-            float * restrict inbuf = dsp->inbufs[i];
-            float * restrict outbuf = dsp->outbufs[i];
+            float * inbuf = dsp->inbufs[i];
+            float * outbuf = dsp->outbufs[i];
             float gain = 0;
             for (n=0; n<dsp->nframes; n++) {
                 outbuf[n] = gain * inbuf[n];
@@ -75,8 +75,6 @@ void gate_process(void * arg)
         else
             state->holdcount[i]++;
     }
-
-
 }
 
 
