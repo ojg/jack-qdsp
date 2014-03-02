@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-c -g -o1 -mssse3 -ffast-math -march=native -std=c99
 LDFLAGS_JACK=-ljack
-LDFLAGS_FILE=-lsndfile
+LDFLAGS_FILE=-lsndfile -lrt
 SOURCES_COMMON=dsp-gate.c dsp-gain.c
 SOURCES_JACK=$(SOURCES_COMMON) jack-qdsp.c
 SOURCES_FILE=$(SOURCES_COMMON) file-qdsp.c

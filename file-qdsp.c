@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <sndfile.h>
 #include <stdbool.h>
+#include <time.h>
 #include "dsp.h"
 
 unsigned int channels;
@@ -56,6 +57,32 @@ void endprogram(char * str)
 {
     fprintf(stderr,"%s",str);
     exit(EXIT_FAILURE);
+}
+
+struct timespec timespecsub(struct timespec start, struct timespec end)
+{
+    struct timespec temp;
+    if ((end.tv_nsec-start.tv_nsec)<0) {
+        temp.tv_sec = end.tv_sec-start.tv_sec-1;
+        temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
+    } else {
+        temp.tv_sec = end.tv_sec-start.tv_sec;
+        temp.tv_nsec = end.tv_nsec-start.tv_nsec;
+    }
+    return temp;
+}
+
+struct timespec timespecadd(struct timespec start, struct timespec end)
+{
+    struct timespec temp;
+    if ((end.tv_nsec+start.tv_nsec)>1000000000) {
+        temp.tv_sec = end.tv_sec+start.tv_sec+1;
+        temp.tv_nsec = end.tv_nsec+start.tv_nsec-1000000000;
+    } else {
+        temp.tv_sec = end.tv_sec+start.tv_sec;
+        temp.tv_nsec = end.tv_nsec+start.tv_nsec;
+    }
+    return temp;
 }
 
 void create_dsp(struct qdsp_t * dsp, char * subopts)
@@ -189,6 +216,7 @@ int main (int argc, char *argv[])
     float *readbuf, *writebuf;
     unsigned int nframes=0, totframes=0;
     bool israwinput = false;
+    struct timespec t,t2,ttot,res;
     int i,c;
 
     if (signal(SIGINT, sig_handler) == SIG_ERR)
@@ -292,14 +320,17 @@ int main (int argc, char *argv[])
     while (nframes == sf_readf_float(input_file, readbuf, nframes)) {
         totframes += nframes;
         deinterleave(tempbuf[0], readbuf, channels, nframes);
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t);
         process(nframes, dsphead);
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t2); t = timespecsub(t,t2); ttot = timespecadd(t,ttot);
         interleave(writebuf, tempbuf[0], channels, nframes);
         if (nframes != sf_writef_float(output_file, writebuf, nframes))
             break;
     }
-
+    clock_getres(CLOCK_THREAD_CPUTIME_ID, &res);
     /* wrap up */
-    fprintf(stderr, "Done! Processed %d samples\n", totframes);
+    fprintf(stderr, "Done! Processed %d samples in %lld.%.9ld sec, res=%ld nsec\n", totframes, (long long)ttot.tv_sec, ttot.tv_nsec, res.tv_nsec);
+
     if (sf_close(input_file)!=0) fprintf(stderr, "Failed closing %s: %s\n", input_filename, sf_strerror(input_file));
     if (sf_close(output_file)!=0) fprintf(stderr, "Failed closing %s: %s\n", output_filename, sf_strerror(output_file));
 
