@@ -8,6 +8,7 @@
 #include <string.h>
 #include <signal.h>
 #include <sndfile.h>
+#include <stdbool.h>
 #include "dsp.h"
 
 unsigned int channels;
@@ -116,6 +117,65 @@ void interleave(float * restrict dst, float * restrict src, int nch, int nfr)
     }
 }
 
+bool get_rawfileopts(SF_INFO * input_sfinfo, char * subopts)
+{
+    enum {
+        CH_OPT = 0,
+        FS_OPT,
+        FORMAT_OPT,
+    };
+    char *const token[] = {
+        [CH_OPT]   = "c",
+        [FS_OPT]   = "r",
+        [FORMAT_OPT] = "f",
+        NULL
+    };
+    char *value;
+    char *name = NULL;
+    int errfnd = 0;
+
+    while (*subopts != '\0' && !errfnd) {
+        switch (getsubopt(&subopts, token, &value)) {
+        case FS_OPT:
+            if (value == NULL) {
+                fprintf(stderr, "Missing value for "
+                        "suboption '%s'\n", token[FS_OPT]);
+                errfnd = 1;
+                continue;
+            }
+            input_sfinfo->samplerate = atoi(value);
+            fprintf(stderr,"raw_fs=%d\n",atoi(value));
+            break;
+        case CH_OPT:
+            if (value == NULL) {
+                fprintf(stderr, "Missing value for "
+                        "suboption '%s'\n", token[CH_OPT]);
+                errfnd = 1;
+                continue;
+            }
+            input_sfinfo->channels = atoi(value);
+            fprintf(stderr,"raw_ch=%d\n",atoi(value));
+            break;
+        case FORMAT_OPT:
+            if (value == NULL) {
+                fprintf(stderr, "Missing value for "
+                        "suboption '%s'\n", token[FORMAT_OPT]);
+                errfnd = 1;
+                continue;
+            }
+            input_sfinfo->format = atoi(value);
+            fprintf(stderr,"raw_format=%d\n",atoi(value));
+            break;
+        default:
+            fprintf(stderr, "%s: No match found "
+                    "for token: /%s/\n", __func__, value);
+            errfnd = 1;
+            break;
+        }
+    }
+    return !errfnd;
+}
+
 int main (int argc, char *argv[])
 {
     SNDFILE *input_file = NULL;
@@ -127,22 +187,20 @@ int main (int argc, char *argv[])
     struct qdsp_t *dsphead = NULL;
     struct qdsp_t *dsp;
     float *readbuf, *writebuf;
-    unsigned int nframes=0;
+    unsigned int nframes=0, totframes=0;
+    bool israwinput = false;
     int i,c;
 
     if (signal(SIGINT, sig_handler) == SIG_ERR)
         fprintf(stderr,"\ncan't catch SIGINT\n");
 
     /* Get command line options */
-    while ((c = getopt (argc, argv, "n:i:o:p:h?")) != -1) {
+    while ((c = getopt (argc, argv, "r:n:i:o:p:h?")) != -1) {
         switch (c) {
-        /*case 'c':
-            channels = atoi(optarg);
-            if (channels < 1 || channels > NCHANNELS_MAX) endprogram("Invalid number of channels specified\n");
-            break;
         case 'r':
-            fs = atoi(optarg);
-            break;*/
+            // for raw file support
+            israwinput = get_rawfileopts(&input_sfinfo, optarg);
+            break;
         case 'n':
             nframes = atoi(optarg);
             break;
@@ -180,15 +238,18 @@ int main (int argc, char *argv[])
     if ((nframes == 0) || (nframes & (nframes - 1))) endprogram("Framesize must be a power of two.\n");
 
     /* open files */
-    memset(&input_sfinfo, 0, sizeof(input_sfinfo));
+    if (israwinput)
+        input_sfinfo.format |= SF_FORMAT_RAW;
+    else
+        memset(&input_sfinfo, 0, sizeof(input_sfinfo));
     if (!(input_file = sf_open(input_filename, SFM_READ, &input_sfinfo))) {
-        fprintf(stderr,"Could not file %s for reading.\n", input_filename);
+        fprintf(stderr,"Could not open file %s for reading.\n", input_filename);
         endprogram("");
     }
 
     memcpy(&output_sfinfo, &input_sfinfo, sizeof(input_sfinfo));
     if (!(output_file = sf_open(output_filename, SFM_WRITE, &output_sfinfo))) {
-        fprintf(stderr,"Could not file %s for reading.\n", output_filename);
+        fprintf(stderr,"Could not open file %s for reading.\n", output_filename);
         endprogram("");
     }
 
@@ -229,6 +290,7 @@ int main (int argc, char *argv[])
 
     /* Run processing until EOF */
     while (nframes == sf_readf_float(input_file, readbuf, nframes)) {
+        totframes += nframes;
         deinterleave(tempbuf[0], readbuf, channels, nframes);
         process(nframes, dsphead);
         interleave(writebuf, tempbuf[0], channels, nframes);
@@ -237,7 +299,7 @@ int main (int argc, char *argv[])
     }
 
     /* wrap up */
-    fprintf(stderr, "Done!\n");
+    fprintf(stderr, "Done! Processed %d samples\n", totframes);
     if (sf_close(input_file)!=0) fprintf(stderr, "Failed closing %s: %s\n", input_filename, sf_strerror(input_file));
     if (sf_close(output_file)!=0) fprintf(stderr, "Failed closing %s: %s\n", output_filename, sf_strerror(output_file));
 
