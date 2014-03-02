@@ -14,10 +14,7 @@ unsigned int channels;
 float **tempbuf;
 float *zerobuf;
 
-/**
- * The process callback for this JACK application is called in a
- * special realtime thread once for each audio cycle.
- */
+
 int process (unsigned int nframes, void *arg)
 {
     struct qdsp_t * dsp = (struct qdsp_t *)arg;
@@ -28,12 +25,6 @@ int process (unsigned int nframes, void *arg)
         if (dsp->sequencecount == 0) {
             fprintf(stderr,"%s: processing %p, next=%p, nframes=%d, seq=%d\n", __func__, dsp, dsp->next, nframes, dsp->sequencecount);
         }
-
-        for (int i=0; i<dsp->nchannels; i++)
-            dsp->inbufs[i] = tempbuf[i];
-
-        for (int i=0; i<dsp->nchannels; i++)
-            dsp->outbufs[i] = tempbuf[i];
 
         dsp->nframes = nframes;
         dsp->sequencecount++;
@@ -205,13 +196,7 @@ int main (int argc, char *argv[])
     fprintf(stderr, "input file samplerate: %d\n", input_sfinfo.samplerate);
     fprintf(stderr, "input file channels: %d\n", input_sfinfo.channels);
     channels = input_sfinfo.channels;
-    dsp = dsphead;
-    while (dsp) {
-        dsp->fs = input_sfinfo.samplerate;
-        dsp->nchannels = input_sfinfo.channels;
-        dsp->zerobuf = zerobuf;
-        dsp = dsp->next;
-    }
+    if (channels < 1 || channels > NCHANNELS_MAX) endprogram("Invalid number of channels specified\n");
 
     /* allocate tempbuf as one large buffer */
     tempbuf = (float**)malloc(channels*sizeof(float*));
@@ -225,6 +210,22 @@ int main (int argc, char *argv[])
 
     readbuf = (float*)malloc(nframes*channels*sizeof(float));
     writebuf = (float*)malloc(nframes*channels*sizeof(float));
+
+    /* setup all static dsp list info */
+    dsp = dsphead;
+    while (dsp) {
+        dsp->fs = input_sfinfo.samplerate;
+        dsp->nchannels = input_sfinfo.channels;
+        dsp->zerobuf = zerobuf;
+
+        for (int i=0; i<dsp->nchannels; i++)
+            dsp->inbufs[i] = tempbuf[i];
+
+        for (int i=0; i<dsp->nchannels; i++)
+            dsp->outbufs[i] = tempbuf[i];
+
+        dsp = dsp->next;
+    }
 
     /* Run processing until EOF */
     while (nframes == sf_readf_float(input_file, readbuf, nframes)) {
