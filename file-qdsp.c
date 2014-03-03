@@ -25,7 +25,7 @@ int process (unsigned int nframes, void *arg)
     while (dsp)
     {
         if (dsp->sequencecount == 0) {
-            fprintf(stderr,"%s: processing %p, next=%p, nframes=%d, seq=%d\n", __func__, dsp, dsp->next, nframes, dsp->sequencecount);
+//            fprintf(stderr,"%s: processing %p, next=%p, nframes=%d, seq=%d\n", __func__, dsp, dsp->next, nframes, dsp->sequencecount);
         }
 
         dsp->nframes = nframes;
