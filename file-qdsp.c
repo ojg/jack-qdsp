@@ -89,11 +89,13 @@ void create_dsp(struct qdsp_t * dsp, char * subopts)
 {
     enum {
         GAIN_OPT = 0,
-        GATE_OPT
+        GATE_OPT,
+        IIR_OPT,
     };
     char *const token[] = {
         [GAIN_OPT]   = "gain",
         [GATE_OPT]   = "gate",
+        [IIR_OPT]    = "iir",
         NULL
     };
     char *value;
@@ -108,6 +110,9 @@ void create_dsp(struct qdsp_t * dsp, char * subopts)
             break;
         case GAIN_OPT:
             errfnd = create_gain(dsp, &subopts);
+            break;
+        case IIR_OPT:
+            errfnd = create_iir(dsp, &subopts);
             break;
         default:
             fprintf(stderr, "create_dsp: No match found "
@@ -160,6 +165,8 @@ bool get_rawfileopts(SF_INFO * input_sfinfo, char * subopts)
     char *value;
     char *name = NULL;
     int errfnd = 0;
+
+    memset(input_sfinfo, 0, sizeof(*input_sfinfo));
 
     while (*subopts != '\0' && !errfnd) {
         switch (getsubopt(&subopts, token, &value)) {
