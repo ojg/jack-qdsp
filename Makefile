@@ -13,7 +13,7 @@ EXECUTABLE_FILE=file-qdsp
 PREFIX=/usr
 
 all: $(SOURCES_JACK) $(EXECUTABLE_JACK) $(SOURCES_FILE) $(EXECUTABLE_FILE)
-    
+   
 $(EXECUTABLE_JACK): $(OBJECTS_JACK) 
 	$(CC) $(OBJECTS_JACK) -o $@ $(LDFLAGS_JACK)
 
@@ -31,3 +31,6 @@ clean:
 	rm -rf $(OBJECTS_JACK) $(EXECUTABLE_JACK)
 	rm -rf $(OBJECTS_FILE) $(EXECUTABLE_FILE)
 
+test:
+	$(MAKE) -C tests
+	
