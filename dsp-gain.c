@@ -6,14 +6,14 @@
 #include "dsp.h"
 
 
-struct jackdsp_gain_state_t {
+struct qdsp_gain_state_t {
     float gain;
 };
 
 void gain_process(void * arg)
 {
     struct qdsp_t * dsp = (struct qdsp_t *)arg;
-    struct jackdsp_gain_state_t * state = (struct jackdsp_gain_state_t *)dsp->state;
+    struct qdsp_gain_state_t * state = (struct qdsp_gain_state_t *)dsp->state;
 
     for (int i=0; i<dsp->nchannels; i++) {
         for (int n=0; n<dsp->nframes; n++) {
@@ -35,7 +35,7 @@ void create_gain(struct qdsp_t * dsp, char ** subopts)
     char *value;
     char *name = NULL;
     int errfnd = 0;
-    struct jackdsp_gain_state_t * state = malloc(sizeof(struct jackdsp_gain_state_t));
+    struct qdsp_gain_state_t * state = malloc(sizeof(struct qdsp_gain_state_t));
     dsp->state = (void*)state;
 
 

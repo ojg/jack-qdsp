@@ -8,7 +8,7 @@
 #include "dsp.h"
 
 
-struct jackdsp_gate_state_t {
+struct qdsp_gate_state_t {
     float threshold;
     unsigned int hold;
     unsigned int holdcount[NCHANNELS_MAX];
@@ -17,7 +17,7 @@ struct jackdsp_gate_state_t {
 void gate_process(void * arg)
 {
     struct qdsp_t * dsp = (struct qdsp_t *)arg;
-    struct jackdsp_gate_state_t * state = (struct jackdsp_gate_state_t *)dsp->state;
+    struct qdsp_gate_state_t * state = (struct qdsp_gate_state_t *)dsp->state;
     unsigned int holdthresh = (state->hold * dsp->fs) / dsp->nframes;
     int i,n;
 
@@ -92,7 +92,7 @@ void create_gate(struct qdsp_t * dsp, char ** subopts)
     char *value;
     char *name = NULL;
     int errfnd = 0;
-    struct jackdsp_gate_state_t * state = malloc(sizeof(struct jackdsp_gate_state_t));
+    struct qdsp_gate_state_t * state = malloc(sizeof(struct qdsp_gate_state_t));
     dsp->state = (void*)state;
     state->hold=0;
 
