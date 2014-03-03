@@ -104,10 +104,10 @@ void create_dsp(struct qdsp_t * dsp, char * subopts)
     while (*subopts != '\0' && !errfnd) {
         switch (getsubopt(&subopts, token, &value)) {
         case GATE_OPT:
-            create_gate(dsp, &subopts);
+            errfnd = create_gate(dsp, &subopts);
             break;
         case GAIN_OPT:
-            create_gain(dsp, &subopts);
+            errfnd = create_gain(dsp, &subopts);
             break;
         default:
             fprintf(stderr, "create_dsp: No match found "
@@ -121,7 +121,7 @@ void create_dsp(struct qdsp_t * dsp, char * subopts)
     dsp->sequencecount = 0;
     dsp->next = NULL;
 
-    if (errfnd) exit(1);
+    if (errfnd) endprogram("Could not create dsp\n");
 }
 
 void deinterleave(float * restrict dst, float * restrict src, int nch, int nfr)

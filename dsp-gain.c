@@ -23,7 +23,7 @@ void gain_process(void * arg)
 }
 
 
-void create_gain(struct qdsp_t * dsp, char ** subopts)
+int create_gain(struct qdsp_t * dsp, char ** subopts)
 {
     enum {
         GAIN_OPT = 0,
@@ -61,5 +61,5 @@ void create_gain(struct qdsp_t * dsp, char ** subopts)
     }
     dsp->process = gain_process;
 
-    if (errfnd) exit(1);
+    return errfnd;
 }

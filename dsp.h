@@ -17,7 +17,8 @@ struct qdsp_t {
     void (*process)(void *);
 };
 
-void create_gate(struct qdsp_t * dsp, char ** subopts);
-void create_gain(struct qdsp_t * dsp, char ** subopts);
+int create_gate(struct qdsp_t * dsp, char ** subopts);
+int create_gain(struct qdsp_t * dsp, char ** subopts);
+int create_iir(struct qdsp_t * dsp, char ** subopts);
 
 #endif

@@ -78,7 +78,7 @@ void gate_process(void * arg)
 }
 
 
-void create_gate(struct qdsp_t * dsp, char ** subopts)
+int create_gate(struct qdsp_t * dsp, char ** subopts)
 {
     enum {
         THRESHOLD_OPT = 0,
@@ -130,5 +130,5 @@ void create_gate(struct qdsp_t * dsp, char ** subopts)
         state->holdcount[i] = 0;
     dsp->process = gate_process;
 
-    if (errfnd) exit(1);
+    return errfnd;
 }
