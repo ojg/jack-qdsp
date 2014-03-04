@@ -26,8 +26,7 @@ struct coeffs_t {
 struct qdsp_iir_state_t {
     enum iir_type type;
     struct coeffs_t coeffs;
-    double s1[NCHANNELS_MAX];
-    double s2[NCHANNELS_MAX];
+    double s[2*NCHANNELS_MAX];
 };
 
 
@@ -74,8 +73,8 @@ void iir_process(void * arg)
         for (c=0; c<nchannels; c++) {
             inbuf = dsp->inbufs[c];
             outbuf = dsp->outbufs[c];
-            s1 = state->s1[c];
-            s2 = state->s2[c];
+            s1 = state->s[c*2];
+            s2 = state->s[c*2+1];
             for (n=0; n<nframes; n++) {
                 x = (double)inbuf[n];
                 y  = s1 + b0 * x;
@@ -83,10 +82,10 @@ void iir_process(void * arg)
                 s2 =      b2 * x - a2 * y;
                 outbuf[n] = (float)y;
             }
-            state->s1[c] = s1;
-            state->s2[c] = s2;
+            state->s[c*2] = s1;
+            state->s[c*2+1] = s2;
         }
-//    }
+    //}
 }
 
 int create_iir(struct qdsp_t * dsp, char ** subopts)
