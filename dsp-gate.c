@@ -132,3 +132,10 @@ int create_gate(struct qdsp_t * dsp, char ** subopts)
 
     return errfnd;
 }
+
+void help_gate(void)
+{
+	fprintf(stderr,"  Gate options\n");
+	fprintf(stderr,"    Name: gate\n    t=threshold (dBFS)\n    h=holdtime (sec)\n");
+	fprintf(stderr,"    Example: -p gate,t=-80,h=30\n");
+}

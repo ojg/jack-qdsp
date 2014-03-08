@@ -154,3 +154,12 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
 
     return errfnd;
 }
+
+void help_iir(void)
+{
+	fprintf(stderr,"  IIR options\n");
+	fprintf(stderr,"    Name: iir\n");
+	fprintf(stderr,"    type: direct\n");
+	fprintf(stderr,"        a1=,a2=,b0=,b1=,b2=coefficient\n");
+	fprintf(stderr,"    Example: -p iir,direct,a1=1,a2=0,b0=1,b1=2,b2=1\n");
+}

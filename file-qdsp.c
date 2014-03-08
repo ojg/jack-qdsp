@@ -37,10 +37,30 @@ int process (unsigned int nframes, void *arg)
     return 0;
 }
 
+void (*dsphelpfunc[])(void) = {
+		help_gain,
+		help_gate,
+		help_iir,
+		NULL,
+};
 
 void print_help()
 {
-    fprintf(stderr,"jack-dsp helptext goes here\n");
+	int i=0;
+    fprintf(stderr,"file-qdsp [general-options] -p dsp-name <dsp-options> [-p ...]\n\n");
+    fprintf(stderr,"General options\n");
+    fprintf(stderr," -i input filename, all types supported by libsndfile\n");
+    fprintf(stderr," -o output filename, all types supported by libsndfile\n");
+    fprintf(stderr," -n framesize in samples. default=1024, must be a power-of-two\n");
+    fprintf(stderr," -r raw file options:\n");
+    fprintf(stderr,"    c=channels\n    r=samplerate in Hz\n    f=format 1=S8,2=S16,3=S24,4=S32,5=U8,6=F32\n");
+    fprintf(stderr,"\nDSP options\n");
+
+    while (dsphelpfunc[i]) {
+        dsphelpfunc[i++]();
+        fprintf(stderr, "\n");
+    }
+
     exit(EXIT_SUCCESS);
 }
 

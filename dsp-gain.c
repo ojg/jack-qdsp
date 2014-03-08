@@ -63,3 +63,10 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
 
     return errfnd;
 }
+
+void help_gain(void)
+{
+	fprintf(stderr,"  Gain options\n");
+	fprintf(stderr,"    Name: gain\n    g=gain value (linear)\n");
+	fprintf(stderr,"    Example: -p gain,g=0.5\n");
+}

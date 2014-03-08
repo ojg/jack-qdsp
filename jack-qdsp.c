@@ -68,9 +68,30 @@ void jack_shutdown (void *arg)
     exit(EXIT_FAILURE);
 }
 
+void (*dsphelpfunc[])(void) = {
+		help_gain,
+		help_gate,
+		help_iir,
+		NULL,
+};
+
 void print_help()
 {
-    fprintf(stderr,"jack-dsp helptext goes here\n");
+	int i=0;
+    fprintf(stderr,"jack-qdsp -c channels [general-options] -p dsp-name <dsp-options> [-p ...]\n\n");
+    fprintf(stderr,"General options\n");
+    fprintf(stderr," -c channels\n");
+    fprintf(stderr," -s server name\n");
+    fprintf(stderr," -n client name\n");
+    fprintf(stderr," -i input ports\n");
+    fprintf(stderr," -o output ports\n");
+    fprintf(stderr,"\nDSP options\n");
+
+    while (dsphelpfunc[i]) {
+        dsphelpfunc[i++]();
+        fprintf(stderr, "\n");
+    }
+
     exit(EXIT_SUCCESS);
 }
 
