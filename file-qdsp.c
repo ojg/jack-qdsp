@@ -47,11 +47,11 @@ void (*dsphelpfunc[])(void) = {
 void print_help()
 {
 	int i=0;
-    fprintf(stderr,"file-qdsp [general-options] -p dsp-name <dsp-options> [-p ...]\n\n");
+    fprintf(stderr,"file-qdsp -i inputfile -o outputfile [general-options] -p dsp-name <dsp-options> [-p ...]\n\n");
     fprintf(stderr,"General options\n");
-    fprintf(stderr," -i input filename, all types supported by libsndfile\n");
-    fprintf(stderr," -o output filename, all types supported by libsndfile\n");
-    fprintf(stderr," -n framesize in samples. default=1024, must be a power-of-two\n");
+    fprintf(stderr," -i input filename, all types supported by libsndfile, - for stdin\n");
+    fprintf(stderr," -o output filename, all types supported by libsndfile, - for stdout\n");
+    fprintf(stderr," -n framesize in samples, default=1024, must be a power-of-two\n");
     fprintf(stderr," -r raw file options:\n");
     fprintf(stderr,"    c=channels\n    r=samplerate in Hz\n    f=format 1=S8,2=S16,3=S24,4=S32,5=U8,6=F32\n");
     fprintf(stderr,"\nDSP options\n");
