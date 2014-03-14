@@ -42,9 +42,9 @@ void iir_process(void * arg)
     unsigned int nframes = dsp->nframes;
     int c,n;
 
-#if 0
     switch (nchannels) {
     case 2:
+#if 0
     {
         v2df x,y,s1,s2,b0,b1,b2,a1,a2 __attribute__ ((aligned (16)));
         a1[0] = a1[1] = state->coeffs.a1;
@@ -57,8 +57,8 @@ void iir_process(void * arg)
         s1[1] = state->s[2];
         s2[1] = state->s[3];
         for (n<0; n<nframes; n++) {
-            x[0] = (iirfp)dsp->inbufs[0][n];
-            x[1] = (iirfp)dsp->inbufs[1][n];
+            x[0] = (double)dsp->inbufs[0][n];
+            x[1] = (double)dsp->inbufs[1][n];
             y  = s1 + b0 * x;
             s1 = s2 + b1 * x - a1 * y;
             s2 =      b2 * x - a2 * y;
@@ -71,8 +71,8 @@ void iir_process(void * arg)
         state->s[3] = s2[1];
         break;
     }
-    default:
 #endif
+    default:
     {
         float *inbuf;
         float *outbuf;
@@ -98,13 +98,29 @@ void iir_process(void * arg)
             state->s[c*2+1] = s2;
         }
     }
-//    }
+    }
 }
 
 int create_iir(struct qdsp_t * dsp, char ** subopts)
 {
     enum {
         DIRECT_OPT = 0,
+        LP2_OPT,
+        HP2_OPT,
+        LS2_OPT,
+        HS2_OPT,
+        LP1_OPT,
+        HP1_OPT,
+        LS1_OPT,
+        HS1_OPT,
+        PEQ_OPT,
+        LWT_OPT,
+        AP_OPT,
+        F0_OPT,
+        Q0_OPT,
+        F1_OPT,
+        Q1_OPT,
+        GAIN_OPT,
         A1_OPT,
         A2_OPT,
         B0_OPT,
@@ -112,7 +128,23 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
         B2_OPT
     };
     char *const token[] = {
-        [DIRECT_OPT]   = "direct",
+        [DIRECT_OPT] = "direct",
+        [LP2_OPT]  = "lp2",
+        [HP2_OPT]  = "hp2",
+        [LS2_OPT]  = "ls2",
+        [HS2_OPT]  = "hs2",
+        [LP1_OPT]  = "lp1",
+        [HP1_OPT]  = "hp1",
+        [LS1_OPT]  = "ls1",
+        [HS1_OPT]  = "hs1",
+        [PEQ_OPT]  = "peq",
+        [LWT_OPT]  = "lwt",
+        [AP_OPT]   = "ap",
+        [F0_OPT]   = "f0",
+        [Q0_OPT]   = "q0",
+        [F1_OPT]   = "f1",
+        [Q1_OPT]   = "q1",
+        [GAIN_OPT] = "gain",
         [A1_OPT]   = "a1",
         [A2_OPT]   = "a2",
         [B0_OPT]   = "b0",
@@ -124,6 +156,9 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
     char *name = NULL;
     int errfnd = 0;
     struct qdsp_iir_state_t * state = malloc(sizeof(struct qdsp_iir_state_t));
+    long long parammask = 0;
+
+
     dsp->state = (void*)state;
     dsp->process = iir_process;
 
@@ -134,6 +169,7 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
         case DIRECT_OPT:
             state->type = IIR_TYPE_DIRECT;
             fprintf(stderr,"%s iir type is direct\n", __func__);
+            parammask |= 1<<DIRECT_OPT;
             break;
         case A1_OPT:
             if (value == NULL) {fprintf(stderr, "Missing value for suboption '%s'\n", token[A1_OPT]); errfnd = 1; continue;}
