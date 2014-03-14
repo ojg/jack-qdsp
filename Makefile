@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-c -g -o1 -mssse3 -ffast-math -march=native -std=c99
+CFLAGS=-c -O3 -msse2 -ffast-math -march=native -ftree-vectorize -std=c99
 LDFLAGS_JACK=-ljack
 LDFLAGS_FILE=-lsndfile -lrt
 SOURCES_COMMON=dsp-gate.c dsp-gain.c dsp-iir.c

@@ -95,7 +95,7 @@ struct timespec timespecsub(struct timespec start, struct timespec end)
 struct timespec timespecadd(struct timespec start, struct timespec end)
 {
     struct timespec temp;
-    if ((end.tv_nsec+start.tv_nsec)>1000000000) {
+    if ((end.tv_nsec+start.tv_nsec)>=1000000000) {
         temp.tv_sec = end.tv_sec+start.tv_sec+1;
         temp.tv_nsec = end.tv_nsec+start.tv_nsec-1000000000;
     } else {
@@ -340,6 +340,8 @@ int main (int argc, char *argv[])
     }
 
     /* Run processing until EOF */
+    ttot.tv_sec=0;
+    ttot.tv_nsec=0;
     while (nframes == sf_readf_float(input_file, readbuf, nframes)) {
         totframes += nframes;
         deinterleave(tempbuf[0], readbuf, channels, nframes);

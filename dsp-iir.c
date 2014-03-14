@@ -6,6 +6,8 @@
 #include <string.h>
 #include "dsp.h"
 
+typedef double iirfp;
+
 enum iir_type {
     IIR_TYPE_DIRECT = 0,
 };
@@ -16,19 +18,20 @@ char *const typestr[] = {
 };
 
 struct coeffs_t {
-    double a1;
-    double a2;
-    double b0;
-    double b1;
-    double b2;
+    iirfp a1;
+    iirfp a2;
+    iirfp b0;
+    iirfp b1;
+    iirfp b2;
 };
 
 struct qdsp_iir_state_t {
     enum iir_type type;
-    struct coeffs_t coeffs;
-    double s[2*NCHANNELS_MAX];
+    struct coeffs_t coeffs __attribute__ ((aligned (16)));
+    iirfp s[2*NCHANNELS_MAX] __attribute__ ((aligned (16)));
 };
 
+typedef double v2df __attribute__ ((vector_size (16)));
 
 /* iir */
 void iir_process(void * arg)
@@ -39,44 +42,53 @@ void iir_process(void * arg)
     unsigned int nframes = dsp->nframes;
     int c,n;
 
-/*    switch (nchannels) {
+#if 0
+    switch (nchannels) {
     case 2:
-        V2DF x,y,s1,s2,b0,b1,b2,a1,a2;
-        V2DF t[256];
-        s1 = load2(s[b][0]);
-        s2 = load2(s[b][1]);
-        b0 = load2dup(c[b][0]);
-        b1 = load2dup(c[b][1]);
-        b2 = load2dup(c[b][2]);
-        a1 = load2dup(c[b][3]);
-        a2 = load2dup(c[b][4]);
-        for (n<0; n<nsamples; n++) {
-            x[0] = (double)inbufs[0][n];
-            x[1] = (double)inbufs[1][n];
-            y = b0 * x + s1 + s2;
-            s1 = b1 * x - a1 * y;
-            s2 = b2 * x - a2 * y;
-            outbufs[0][n] = (float)y[0];
-            outbufs[1][n] = (float)y[1];
+    {
+        v2df x,y,s1,s2,b0,b1,b2,a1,a2 __attribute__ ((aligned (16)));
+        a1[0] = a1[1] = state->coeffs.a1;
+        a2[0] = a2[1] = state->coeffs.a2;
+        b0[0] = b0[1] = state->coeffs.b0;
+        b1[0] = b1[1] = state->coeffs.b1;
+        b2[0] = b2[1] = state->coeffs.b2;
+        s1[0] = state->s[0];
+        s2[0] = state->s[1];
+        s1[1] = state->s[2];
+        s2[1] = state->s[3];
+        for (n<0; n<nframes; n++) {
+            x[0] = (iirfp)dsp->inbufs[0][n];
+            x[1] = (iirfp)dsp->inbufs[1][n];
+            y  = s1 + b0 * x;
+            s1 = s2 + b1 * x - a1 * y;
+            s2 =      b2 * x - a2 * y;
+            dsp->outbufs[0][n] = (float)y[0];
+            dsp->outbufs[1][n] = (float)y[1];
         }
-        s[b][0] = save2(s1);
-        s[b][1] = save2(s2);
-    default:*/
+        state->s[0] = s1[0];
+        state->s[1] = s2[0];
+        state->s[2] = s1[1];
+        state->s[3] = s2[1];
+        break;
+    }
+    default:
+#endif
+    {
         float *inbuf;
         float *outbuf;
-        double x,y,s1,s2;
-        double a1 = state->coeffs.a1;
-        double a2 = state->coeffs.a2;
-        double b0 = state->coeffs.b0;
-        double b1 = state->coeffs.b1;
-        double b2 = state->coeffs.b2;
+        iirfp x,y,s1,s2;
+        iirfp a1 = state->coeffs.a1;
+        iirfp a2 = state->coeffs.a2;
+        iirfp b0 = state->coeffs.b0;
+        iirfp b1 = state->coeffs.b1;
+        iirfp b2 = state->coeffs.b2;
         for (c=0; c<nchannels; c++) {
             inbuf = dsp->inbufs[c];
             outbuf = dsp->outbufs[c];
             s1 = state->s[c*2];
             s2 = state->s[c*2+1];
             for (n=0; n<nframes; n++) {
-                x = (double)inbuf[n];
+                x = (iirfp)inbuf[n];
                 y  = s1 + b0 * x;
                 s1 = s2 + b1 * x - a1 * y;
                 s2 =      b2 * x - a2 * y;
@@ -85,7 +97,8 @@ void iir_process(void * arg)
             state->s[c*2] = s1;
             state->s[c*2+1] = s2;
         }
-    //}
+    }
+//    }
 }
 
 int create_iir(struct qdsp_t * dsp, char ** subopts)
