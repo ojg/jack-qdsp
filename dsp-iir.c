@@ -4,17 +4,25 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include "dsp.h"
 
 typedef double iirfp;
 
 enum iir_type {
-    IIR_TYPE_DIRECT = 0,
-};
-
-char *const typestr[] = {
-    [IIR_TYPE_DIRECT]   = "direct",
-    NULL
+    DIRECT_OPT = 0,
+    LP2_OPT,
+    HP2_OPT,
+    LS2_OPT,
+    HS2_OPT,
+    LP1_OPT,
+    HP1_OPT,
+    LS1_OPT,
+    HS1_OPT,
+    PEQ_OPT,
+    LWT_OPT,
+    AP2_OPT,
+    AP1_OPT,
 };
 
 struct coeffs_t {
@@ -27,6 +35,7 @@ struct coeffs_t {
 
 struct qdsp_iir_state_t {
     enum iir_type type;
+    double f0,f1,q0,q1,gain;
     struct coeffs_t coeffs __attribute__ ((aligned (16)));
     iirfp s[2*NCHANNELS_MAX] __attribute__ ((aligned (16)));
 };
@@ -104,29 +113,19 @@ void iir_process(void * arg)
 int create_iir(struct qdsp_t * dsp, char ** subopts)
 {
     enum {
-        DIRECT_OPT = 0,
-        LP2_OPT,
-        HP2_OPT,
-        LS2_OPT,
-        HS2_OPT,
-        LP1_OPT,
-        HP1_OPT,
-        LS1_OPT,
-        HS1_OPT,
-        PEQ_OPT,
-        LWT_OPT,
-        AP_OPT,
-        F0_OPT,
+        F0_OPT = AP1_OPT+1,
         Q0_OPT,
+        GAIN_OPT,
         F1_OPT,
         Q1_OPT,
-        GAIN_OPT,
         A1_OPT,
         A2_OPT,
         B0_OPT,
         B1_OPT,
-        B2_OPT
+        B2_OPT,
     };
+#define FIRST_VALUETOKEN F0_OPT
+
     char *const token[] = {
         [DIRECT_OPT] = "direct",
         [LP2_OPT]  = "lp2",
@@ -139,12 +138,14 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
         [HS1_OPT]  = "hs1",
         [PEQ_OPT]  = "peq",
         [LWT_OPT]  = "lwt",
-        [AP_OPT]   = "ap",
-        [F0_OPT]   = "f0",
-        [Q0_OPT]   = "q0",
+        [AP2_OPT]  = "ap2",
+        [AP1_OPT]  = "ap1",
+
+        [F0_OPT]   = "f",
+        [Q0_OPT]   = "q",
+        [GAIN_OPT] = "g",
         [F1_OPT]   = "f1",
         [Q1_OPT]   = "q1",
-        [GAIN_OPT] = "gain",
         [A1_OPT]   = "a1",
         [A2_OPT]   = "a2",
         [B0_OPT]   = "b0",
@@ -152,12 +153,29 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
         [B2_OPT]   = "b2",
         NULL
     };
+
+    long long validparammasks[] = {
+            (1<<DIRECT_OPT) | (1<<A1_OPT) | (1<<A2_OPT) | (1<<B0_OPT) | (1<<B1_OPT) | (1<<B2_OPT),
+            (1<<LP2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT),
+            (1<<HP2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT),
+            (1<<LP1_OPT) | (1<<F0_OPT),
+            (1<<HP1_OPT) | (1<<F0_OPT),
+            (1<<LS2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT) | (1<<GAIN_OPT),
+            (1<<HS2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT) | (1<<GAIN_OPT),
+            (1<<LS1_OPT) | (1<<F0_OPT),
+            (1<<HS1_OPT) | (1<<F0_OPT),
+            (1<<PEQ_OPT) | (1<<F0_OPT) | (1<<Q0_OPT) | (1<<GAIN_OPT),
+            (1<<LWT_OPT) | (1<<F0_OPT) | (1<<F1_OPT) | (1<<Q0_OPT) | (1<<Q1_OPT),
+            (1<<AP2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT),
+    };
+
     char *value;
     char *name = NULL;
-    int errfnd = 0;
+    int errfnd = 0, i;
     struct qdsp_iir_state_t * state = malloc(sizeof(struct qdsp_iir_state_t));
-    long long parammask = 0;
-
+    long long curparammask = 0;
+    int curtoken;
+    bool validparams = false;
 
     dsp->state = (void*)state;
     dsp->process = iir_process;
@@ -165,40 +183,87 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
     fprintf(stderr,"%s subopts: %s\n", __func__, *subopts);
     while (**subopts != '\0' && !errfnd) {
         fprintf(stderr,"%s checking subopts: %s\n", __func__, *subopts);
-        switch (getsubopt(subopts, token, &value)) {
+        curtoken = getsubopt(subopts, token, &value);
+
+        if (curtoken < 0) {
+            fprintf(stderr, "%s: No match found for token '%s'\n", __func__, value);
+            continue;
+        }
+
+        if (curtoken >= FIRST_VALUETOKEN && value == NULL) {
+            fprintf(stderr, "Missing value for suboption '%s'\n", token[curtoken]);
+            errfnd = 1;
+            continue;
+        }
+
+        if (curtoken < FIRST_VALUETOKEN && value != NULL) {
+            fprintf(stderr, "Ignoring value for suboption '%s'\n", token[curtoken]);
+        }
+
+        switch (curtoken) {
         case DIRECT_OPT:
-            state->type = IIR_TYPE_DIRECT;
-            fprintf(stderr,"%s iir type is direct\n", __func__);
-            parammask |= 1<<DIRECT_OPT;
+        case LP2_OPT:
+        case HP2_OPT:
+        case LS2_OPT:
+        case HS2_OPT:
+        case LP1_OPT:
+        case HP1_OPT:
+        case LS1_OPT:
+        case HS1_OPT:
+        case PEQ_OPT:
+        case LWT_OPT:
+        case AP2_OPT:
+        case AP1_OPT:
+            state->type = curtoken;
+            fprintf(stderr,"%s iir type is %s\n", __func__, token[curtoken]);
+            break;
+        case F0_OPT:
+            state->f0 = strtod(value, NULL);
+            break;
+        case Q0_OPT:
+            state->q0 = strtod(value, NULL);
+            break;
+        case F1_OPT:
+            state->f1 = strtod(value, NULL);
+            break;
+        case Q1_OPT:
+            state->q1 = strtod(value, NULL);
+            break;
+        case GAIN_OPT:
+            state->gain = strtod(value, NULL);
             break;
         case A1_OPT:
-            if (value == NULL) {fprintf(stderr, "Missing value for suboption '%s'\n", token[A1_OPT]); errfnd = 1; continue;}
             state->coeffs.a1 = strtod(value, NULL);
             break;
         case A2_OPT:
-            if (value == NULL) {fprintf(stderr, "Missing value for suboption '%s'\n", token[A2_OPT]); errfnd = 1; continue;}
             state->coeffs.a2 = strtod(value, NULL);
             break;
         case B0_OPT:
-            if (value == NULL) {fprintf(stderr, "Missing value for suboption '%s'\n", token[B0_OPT]); errfnd = 1; continue;}
             state->coeffs.b0 = strtod(value, NULL);
             break;
         case B1_OPT:
-            if (value == NULL) {fprintf(stderr, "Missing value for suboption '%s'\n", token[B1_OPT]); errfnd = 1; continue;}
             state->coeffs.b1 = strtod(value, NULL);
             break;
         case B2_OPT:
-            if (value == NULL) {fprintf(stderr, "Missing value for suboption '%s'\n", token[B2_OPT]); errfnd = 1; continue;}
             state->coeffs.b2 = strtod(value, NULL);
             break;
         default:
-            fprintf(stderr, "%s: No match found for token: /%s/\n", __func__, value);
-            errfnd = 1;
-            break;
+            fprintf(stderr, "%s: No match found for token '%s'\n", __func__, value);
+            continue;
         }
+
+        curparammask |= 1 << curtoken;
+
     }
-/*    state->s1 = calloc(2 * nchannels, sizeof(float));
-    state->s2 = state->s1 + nchannels;*/
+
+    for (i=0; i<sizeof(validparammasks)/sizeof(validparammasks[0]); i++) {
+        if (validparammasks[i] == curparammask)
+            validparams = true;
+    }
+    if (!validparams) {
+        fprintf(stderr, "%s: Missing parameters for iir type '%s'\n", __func__, token[state->type]);
+        errfnd = 1;
+    }
 
     return errfnd;
 }
