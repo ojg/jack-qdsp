@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <math.h>
 #include "dsp.h"
 
 typedef double iirfp;
@@ -42,7 +43,80 @@ struct qdsp_iir_state_t {
 
 typedef double v2df __attribute__ ((vector_size (16)));
 
-/* iir */
+
+int calc_coeffs(struct qdsp_iir_state_t * state, double fs)
+{
+    /* Based on RBJ Cookbook Formulae */
+    double A = sqrt(pow(10.0,state->gain/20.0));
+    double w0 = 2.0*M_PI*state->f0/fs;
+    double sinw0 = sin(w0);
+    double cosw0 = cos(w0);
+    double ln2 = log(2.0);
+    double alpha = sinw0/(2.0*state->q0);
+    double b0,b1,b2,a0,a1,a2;
+
+    switch (state->type) {
+    case LP2_OPT:
+        b0 =  (1 - cosw0)/2;
+        b1 =   1 - cosw0;
+        b2 =  (1 - cosw0)/2;
+        a0 =   1 + alpha;
+        a1 =  -2*cosw0;
+        a2 =   1 - alpha;
+        break;
+    case HP2_OPT:
+        b0 =  (1 + cosw0)/2;
+        b1 = -(1 + cosw0);
+        b2 =  (1 + cosw0)/2;
+        a0 =   1 + alpha;
+        a1 =  -2*cosw0;
+        a2 =   1 - alpha;
+        break;
+    case LS2_OPT:
+        b0 =    A*( (A+1) - (A-1)*cosw0 + 2*sqrt(A)*alpha );
+        b1 =  2*A*( (A-1) - (A+1)*cosw0                   );
+        b2 =    A*( (A+1) - (A-1)*cosw0 - 2*sqrt(A)*alpha );
+        a0 =        (A+1) + (A-1)*cosw0 + 2*sqrt(A)*alpha;
+        a1 =   -2*( (A-1) + (A+1)*cosw0                   );
+        a2 =        (A+1) + (A-1)*cosw0 - 2*sqrt(A)*alpha;
+        break;
+    case HS2_OPT:
+        b0 =    A*( (A+1) + (A-1)*cosw0 + 2*sqrt(A)*alpha );
+        b1 = -2*A*( (A-1) + (A+1)*cosw0                   );
+        b2 =    A*( (A+1) + (A-1)*cosw0 - 2*sqrt(A)*alpha );
+        a0 =        (A+1) - (A-1)*cosw0 + 2*sqrt(A)*alpha;
+        a1 =    2*( (A-1) - (A+1)*cosw0                   );
+        a2 =        (A+1) - (A-1)*cosw0 - 2*sqrt(A)*alpha;
+        break;
+    case PEQ_OPT:
+        b0 =   1 + alpha*A;
+        b1 =  -2*cosw0;
+        b2 =   1 - alpha*A;
+        a0 =   1 + alpha/A;
+        a1 =  -2*cosw0;
+        a2 =   1 - alpha/A;
+        break;
+    case AP2_OPT:
+        b0 =   1 - alpha;
+        b1 =  -2*cosw0;
+        b2 =   1 + alpha;
+        a0 =   1 + alpha;
+        a1 =  -2*cosw0;
+        a2 =   1 - alpha;
+        break;
+    default:
+        return 1;
+    }
+
+    state->coeffs.b0 = b0 / a0;
+    state->coeffs.b1 = b1 / a0;
+    state->coeffs.b2 = b2 / a0;
+    state->coeffs.a1 = a1 / a0;
+    state->coeffs.a2 = a2 / a0;
+
+    return 0;
+}
+
 void iir_process(void * arg)
 {
     struct qdsp_t * dsp = (struct qdsp_t *)arg;
