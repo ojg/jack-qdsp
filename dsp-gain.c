@@ -10,9 +10,8 @@ struct qdsp_gain_state_t {
     float gain;
 };
 
-void gain_process(void * arg)
+void gain_process(struct qdsp_t * dsp)
 {
-    struct qdsp_t * dsp = (struct qdsp_t *)arg;
     struct qdsp_gain_state_t * state = (struct qdsp_gain_state_t *)dsp->state;
 
     for (int i=0; i<dsp->nchannels; i++) {

@@ -14,7 +14,7 @@ struct qdsp_t {
     unsigned int nframes;
     unsigned int sequencecount;
     void *state;
-    void (*process)(void *);
+    void (*process)(struct qdsp_t *);
 };
 
 int create_gate(struct qdsp_t * dsp, char ** subopts);

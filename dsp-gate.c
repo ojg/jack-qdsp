@@ -14,9 +14,8 @@ struct qdsp_gate_state_t {
     unsigned int holdcount[NCHANNELS_MAX];
 };
 
-void gate_process(void * arg)
+void gate_process(struct qdsp_t * dsp)
 {
-    struct qdsp_t * dsp = (struct qdsp_t *)arg;
     struct qdsp_gate_state_t * state = (struct qdsp_gate_state_t *)dsp->state;
     unsigned int holdthresh = (state->hold * dsp->fs) / dsp->nframes;
     int i,n;

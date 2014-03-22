@@ -117,9 +117,8 @@ int calc_coeffs(struct qdsp_iir_state_t * state, double fs)
     return 0;
 }
 
-void iir_process(void * arg)
+void iir_process(struct qdsp_t * dsp)
 {
-    struct qdsp_t * dsp = (struct qdsp_t *)arg;
     struct qdsp_iir_state_t * state = (struct qdsp_iir_state_t *)dsp->state;
     unsigned int nchannels = dsp->nchannels;
     unsigned int nframes = dsp->nframes;
