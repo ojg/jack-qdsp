@@ -336,6 +336,8 @@ int main (int argc, char *argv[])
         for (int i=0; i<dsp->nchannels; i++)
             dsp->outbufs[i] = tempbuf[i];
 
+        dsp->init(dsp);
+
         dsp = dsp->next;
     }
 

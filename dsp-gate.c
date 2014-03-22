@@ -76,6 +76,9 @@ void gate_process(struct qdsp_t * dsp)
     }
 }
 
+void gate_init(struct qdsp_t * dsp)
+{}
+
 
 int create_gate(struct qdsp_t * dsp, char ** subopts)
 {
@@ -128,6 +131,7 @@ int create_gate(struct qdsp_t * dsp, char ** subopts)
     for (int i=0; i<NCHANNELS_MAX; i++)
         state->holdcount[i] = 0;
     dsp->process = gate_process;
+    dsp->init = gate_init;
 
     return errfnd;
 }

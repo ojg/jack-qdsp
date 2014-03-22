@@ -21,6 +21,8 @@ void gain_process(struct qdsp_t * dsp)
     }
 }
 
+void gain_init(struct qdsp_t * dsp)
+{}
 
 int create_gain(struct qdsp_t * dsp, char ** subopts)
 {
@@ -59,6 +61,7 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
         }
     }
     dsp->process = gain_process;
+    dsp->init = gain_init;
 
     return errfnd;
 }

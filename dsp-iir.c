@@ -117,6 +117,14 @@ int calc_coeffs(struct qdsp_iir_state_t * state, double fs)
     return 0;
 }
 
+void init_iir(struct qdsp_t * dsp)
+{
+    struct qdsp_iir_state_t * state = (struct qdsp_iir_state_t *)dsp->state;
+    if (state->type != DIRECT_OPT) {
+        calc_coeffs(state, dsp->fs);
+    }
+}
+
 void iir_process(struct qdsp_t * dsp)
 {
     struct qdsp_iir_state_t * state = (struct qdsp_iir_state_t *)dsp->state;
@@ -337,6 +345,8 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
         fprintf(stderr, "%s: Missing parameters for iir type '%s'\n", __func__, token[state->type]);
         errfnd = 1;
     }
+
+    dsp->init = init_iir;
 
     return errfnd;
 }

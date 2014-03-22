@@ -15,6 +15,7 @@ struct qdsp_t {
     unsigned int sequencecount;
     void *state;
     void (*process)(struct qdsp_t *);
+    void (*init)(struct qdsp_t *);
 };
 
 int create_gate(struct qdsp_t * dsp, char ** subopts);
