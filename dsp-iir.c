@@ -52,6 +52,7 @@ int calc_coeffs(struct qdsp_iir_state_t * state, int fs)
     double sinw0 = sin(w0);
     double alpha = sinw0/(2.0*state->q0);
     double b0,b1,b2,a0,a1,a2;
+    double q0,q1,w1;
     fprintf(stderr,"%s iir type is %d\n", __func__, state->type);
     fprintf(stderr,"%s fs=%d, w0=%.3f, alpha=%.3f, cosw0=%.3f\n", __func__, fs, w0, alpha, cosw0);
 
@@ -103,6 +104,19 @@ int calc_coeffs(struct qdsp_iir_state_t * state, int fs)
         a0 =   1 + alpha;
         a1 =  -2*cosw0;
         a2 =   1 - alpha;
+        break;
+    case LWT_OPT:
+        q0 = state->q0;
+        q1 = state->q1;
+        w1 = 2.0*M_PI*state->f1/fs;
+        cosw0 = cos(0.95); //fixme: 0.95 found empirically
+        sinw0 = sin(0.95);
+        b0 = 1 + cosw0 + sinw0*w0/q0 + (1-cosw0)*w0*w0;
+        b1 = -2 - 2*cosw0 + (2-2*cosw0)*w0*w0;
+        b2 = 1 + cosw0 - sinw0*w0/q0 + (1-cosw0)*w0*w0;
+        a0 = 1 + cosw0 + sinw0*w1/q1 + (1-cosw0)*w1*w1;
+        a1 = -2 - 2*cosw0 + (2-2*cosw0)*w1*w1;
+        a2 = 1 + cosw0 - sinw0*w1/q1 + (1-cosw0)*w1*w1;
         break;
     default:
         return 1;
