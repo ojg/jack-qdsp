@@ -43,17 +43,17 @@ struct qdsp_iir_state_t {
 
 typedef double v2df __attribute__ ((vector_size (16)));
 
-
-int calc_coeffs(struct qdsp_iir_state_t * state, double fs)
+int calc_coeffs(struct qdsp_iir_state_t * state, int fs)
 {
     /* Based on RBJ Cookbook Formulae */
     double A = sqrt(pow(10.0,state->gain/20.0));
     double w0 = 2.0*M_PI*state->f0/fs;
-    double sinw0 = sin(w0);
     double cosw0 = cos(w0);
-    double ln2 = log(2.0);
+    double sinw0 = sin(w0);
     double alpha = sinw0/(2.0*state->q0);
     double b0,b1,b2,a0,a1,a2;
+    fprintf(stderr,"%s iir type is %d\n", __func__, state->type);
+    fprintf(stderr,"%s fs=%d, w0=%.3f, alpha=%.3f, cosw0=%.3f\n", __func__, fs, w0, alpha, cosw0);
 
     switch (state->type) {
     case LP2_OPT:
@@ -113,6 +113,9 @@ int calc_coeffs(struct qdsp_iir_state_t * state, double fs)
     state->coeffs.b2 = b2 / a0;
     state->coeffs.a1 = a1 / a0;
     state->coeffs.a2 = a2 / a0;
+
+    fprintf(stderr,"%s coeffs: b0=%.4g, b1=%.4g, b2=%.4g, a1=%.4g, a2=%.4g\n", __func__,
+            state->coeffs.b0, state->coeffs.b1, state->coeffs.b2, state->coeffs.a1, state->coeffs.a2);
 
     return 0;
 }
