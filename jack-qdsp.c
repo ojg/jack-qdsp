@@ -258,6 +258,7 @@ int main (int argc, char *argv[])
     while (dsp) {
         dsp->fs = fs;
         dsp->nchannels = channels;
+        dsp->init(dsp);
         dsp = dsp->next;
     }
 
