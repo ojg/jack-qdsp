@@ -115,11 +115,13 @@ void create_dsp(struct qdsp_t * dsp, char * subopts)
 {
     enum {
         GAIN_OPT = 0,
-        GATE_OPT
+        GATE_OPT,
+        IIR_OPT
     };
     char *const token[] = {
         [GAIN_OPT]   = "gain",
         [GATE_OPT]   = "gate",
+        [IIR_OPT]    = "iir",
         NULL
     };
     char *value;
@@ -134,6 +136,9 @@ void create_dsp(struct qdsp_t * dsp, char * subopts)
             break;
         case GAIN_OPT:
             create_gain(dsp, &subopts);
+            break;
+        case IIR_OPT:
+            errfnd = create_iir(dsp, &subopts);
             break;
         default:
             fprintf(stderr, "create_dsp: No match found "
