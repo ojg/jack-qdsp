@@ -38,15 +38,16 @@ int process (unsigned int nframes, void *arg)
 }
 
 void (*dsphelpfunc[])(void) = {
-		help_gain,
-		help_gate,
-		help_iir,
-		NULL,
+        help_gain,
+        help_gate,
+        help_iir,
+        help_clip,
+        NULL,
 };
 
 void print_help()
 {
-	int i=0;
+    int i=0;
     fprintf(stderr,"file-qdsp -i inputfile -o outputfile [general-options] -p dsp-name <dsp-options> [-p ...]\n\n");
     fprintf(stderr,"General options\n");
     fprintf(stderr," -i input filename, all types supported by libsndfile, - for stdin\n");
@@ -111,11 +112,13 @@ void create_dsp(struct qdsp_t * dsp, char * subopts)
         GAIN_OPT = 0,
         GATE_OPT,
         IIR_OPT,
+        CLIP_OPT,
     };
     char *const token[] = {
         [GAIN_OPT]   = "gain",
         [GATE_OPT]   = "gate",
         [IIR_OPT]    = "iir",
+        [CLIP_OPT]   = "clip",
         NULL
     };
     char *value;
@@ -133,6 +136,9 @@ void create_dsp(struct qdsp_t * dsp, char * subopts)
             break;
         case IIR_OPT:
             errfnd = create_iir(dsp, &subopts);
+            break;
+        case CLIP_OPT:
+            errfnd = create_clip(dsp, &subopts);
             break;
         default:
             fprintf(stderr, "create_dsp: No match found "
