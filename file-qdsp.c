@@ -15,8 +15,7 @@
 unsigned int channels;
 float **tempbuf;
 float *zerobuf;
-extern void (*dsphelpfunc[])(void);
-
+extern struct dspfuncs_t dspfuncs[];
 
 int process (unsigned int nframes, void *arg)
 {
@@ -50,8 +49,8 @@ void print_help()
     fprintf(stderr,"    c=channels\n    r=samplerate in Hz\n    f=format 1=S8,2=S16,3=S24,4=S32,5=U8,6=F32\n");
     fprintf(stderr,"\nDSP options\n");
 
-    while (dsphelpfunc[i]) {
-        dsphelpfunc[i++]();
+    while (dspfuncs[i].helpfunc) {
+        dspfuncs[i++].helpfunc();
         fprintf(stderr, "\n");
     }
 

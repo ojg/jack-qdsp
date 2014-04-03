@@ -21,27 +21,33 @@ char *const token[] = {
     NULL
 };
 
-int (*createfunc[])(struct qdsp_t * dsp, char ** subopts) = {
-        [GAIN_OPT]   = create_gain,
-        [GATE_OPT]   = create_gate,
-        [IIR_OPT]    = create_iir,
-        [CLIP_OPT]   = create_clip,
-        NULL
+extern int create_gate(struct qdsp_t * dsp, char ** subopts);
+extern int create_gain(struct qdsp_t * dsp, char ** subopts);
+extern int create_iir(struct qdsp_t * dsp, char ** subopts);
+extern int create_clip(struct qdsp_t * dsp, char ** subopts);
+
+extern void help_gain(void);
+extern void help_gate(void);
+extern void help_iir(void);
+extern void help_clip(void);
+
+struct dspfuncs_t dspfuncs[] = {
+        [GAIN_OPT].helpfunc     = help_gain,
+        [GAIN_OPT].createfunc   = create_gain,
+
+        [GATE_OPT].helpfunc     = help_gate,
+        [GATE_OPT].createfunc   = create_gate,
+
+        [IIR_OPT].helpfunc      = help_iir,
+        [IIR_OPT].createfunc    = create_iir,
+
+        [CLIP_OPT].helpfunc     = help_clip,
+        [CLIP_OPT].createfunc   = create_clip,
+
+        [END_OPT].helpfunc      = NULL,
+        [END_OPT].createfunc    = NULL,
 };
 
-void (*dsphelpfunc[])(void) = {
-        [GAIN_OPT]   = help_gain,
-        [GATE_OPT]   = help_gate,
-        [IIR_OPT]    = help_iir,
-        [CLIP_OPT]   = help_clip,
-        NULL,
-};
-
-void endprogram(char * str)
-{
-    fprintf(stderr,"%s",str);
-    exit(EXIT_FAILURE);
-}
 
 void create_dsp(struct qdsp_t * dsp, char * subopts)
 {
@@ -55,7 +61,7 @@ void create_dsp(struct qdsp_t * dsp, char * subopts)
     while (*subopts != '\0' && !errfnd) {
         curtoken = getsubopt(&subopts, token, &value);
         if (curtoken >= 0 && curtoken < END_OPT) {
-            errfnd = createfunc[curtoken](dsp, &subopts);
+            errfnd = dspfuncs[curtoken].createfunc(dsp, &subopts);
         }
         else {
             fprintf(stderr, "create_dsp: No match found for token: /%s/\n", value);
@@ -68,4 +74,10 @@ void create_dsp(struct qdsp_t * dsp, char * subopts)
     dsp->next = NULL;
 
     if (errfnd) endprogram("Could not create dsp\n");
+}
+
+void endprogram(char * str)
+{
+    fprintf(stderr,"%s",str);
+    exit(EXIT_FAILURE);
 }

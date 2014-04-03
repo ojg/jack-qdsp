@@ -15,7 +15,7 @@ jack_port_t *output_port[NCHANNELS_MAX];
 jack_client_t *client;
 float *tempbuf[NCHANNELS_MAX];
 float *zerobuf;
-extern void (*dsphelpfunc[])(void);
+extern struct dspfuncs_t dspfuncs[];
 
 /**
  * The process callback for this JACK application is called in a
@@ -81,8 +81,8 @@ void print_help()
     fprintf(stderr," -o output ports\n");
     fprintf(stderr,"\nDSP options\n");
 
-    while (dsphelpfunc[i]) {
-        dsphelpfunc[i++]();
+    while (dspfuncs[i].helpfunc) {
+        dspfuncs[i++].helpfunc();
         fprintf(stderr, "\n");
     }
 
