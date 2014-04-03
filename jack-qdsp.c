@@ -15,6 +15,7 @@ jack_port_t *output_port[NCHANNELS_MAX];
 jack_client_t *client;
 float *tempbuf[NCHANNELS_MAX];
 float *zerobuf;
+extern void (*dsphelpfunc[])(void);
 
 /**
  * The process callback for this JACK application is called in a
@@ -67,14 +68,6 @@ void jack_shutdown (void *arg)
 {
     exit(EXIT_FAILURE);
 }
-
-void (*dsphelpfunc[])(void) = {
-        help_gain,
-        help_gate,
-        help_iir,
-        help_clip,
-        NULL,
-};
 
 void print_help()
 {

@@ -15,6 +15,7 @@
 unsigned int channels;
 float **tempbuf;
 float *zerobuf;
+extern void (*dsphelpfunc[])(void);
 
 
 int process (unsigned int nframes, void *arg)
@@ -36,14 +37,6 @@ int process (unsigned int nframes, void *arg)
 
     return 0;
 }
-
-void (*dsphelpfunc[])(void) = {
-        help_gain,
-        help_gate,
-        help_iir,
-        help_clip,
-        NULL,
-};
 
 void print_help()
 {

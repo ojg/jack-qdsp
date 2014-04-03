@@ -29,6 +29,13 @@ int (*createfunc[])(struct qdsp_t * dsp, char ** subopts) = {
         NULL
 };
 
+void (*dsphelpfunc[])(void) = {
+        [GAIN_OPT]   = help_gain,
+        [GATE_OPT]   = help_gate,
+        [IIR_OPT]    = help_iir,
+        [CLIP_OPT]   = help_clip,
+        NULL,
+};
 
 void endprogram(char * str)
 {
