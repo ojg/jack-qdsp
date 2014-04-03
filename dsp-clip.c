@@ -2,7 +2,6 @@
 #include <getopt.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include "dsp.h"
 
 
@@ -45,20 +44,20 @@ int create_clip(struct qdsp_t * dsp, char ** subopts)
     dsp->state = (void*)state;
 
 
-    fprintf(stderr,"%s subopts: %s\n", __func__, *subopts);
+    debugprint(0,"%s subopts: %s\n", __func__, *subopts);
     while (**subopts != '\0' && !errfnd) {
         switch (getsubopt(subopts, token, &value)) {
         case THRESHOLD_OPT:
             if (value == NULL) {
-                fprintf(stderr, "Missing value for suboption '%s'\n", token[THRESHOLD_OPT]);
+                debugprint(0, "Missing value for suboption '%s'\n", token[THRESHOLD_OPT]);
                 errfnd = 1;
                 continue;
             }
             state->threshold = atof(value);
-            fprintf(stderr,"threshold=%f\n",atof(value));
+            debugprint(0,"%s: threshold=%f\n", __func__, atof(value));
             break;
         default:
-            fprintf(stderr, "%s: No match found for token: /%s/\n", __func__, value);
+            debugprint(0, "%s: No match found for token: /%s/\n", __func__, value);
             errfnd = 1;
             break;
         }
@@ -71,7 +70,7 @@ int create_clip(struct qdsp_t * dsp, char ** subopts)
 
 void help_clip(void)
 {
-    fprintf(stderr,"  Clip options\n");
-    fprintf(stderr,"    Name: clip\n    t=clip threshold (linear)\n");
-    fprintf(stderr,"    Example: -p clip,t=1.0\n");
+    debugprint(0,"  Clip options\n");
+    debugprint(0,"    Name: clip\n    t=clip threshold (linear)\n");
+    debugprint(0,"    Example: -p clip,t=1.0\n");
 }

@@ -2,8 +2,10 @@
 #include <getopt.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <stdio.h>
+#include <stdarg.h>
 #include "dsp.h"
+
+extern int debuglevel;
 
 enum {
     GAIN_OPT = 0,
@@ -56,7 +58,7 @@ void create_dsp(struct qdsp_t * dsp, char * subopts)
     int errfnd = 0;
     int curtoken;
 
-    fprintf(stderr,"create_dsp subopts: %s\n", subopts);
+    debugprint(1, "create_dsp subopts: %s\n", subopts);
 
     while (*subopts != '\0' && !errfnd) {
         curtoken = getsubopt(&subopts, token, &value);
@@ -64,7 +66,7 @@ void create_dsp(struct qdsp_t * dsp, char * subopts)
             errfnd = dspfuncs[curtoken].createfunc(dsp, &subopts);
         }
         else {
-            fprintf(stderr, "create_dsp: No match found for token: /%s/\n", value);
+            debugprint(0, "create_dsp: No match found for token: /%s/\n", value);
             errfnd = 1;
             break;
         }
@@ -78,6 +80,16 @@ void create_dsp(struct qdsp_t * dsp, char * subopts)
 
 void endprogram(char * str)
 {
-    fprintf(stderr,"%s",str);
+    debugprint(0, "%s",str);
     exit(EXIT_FAILURE);
+}
+
+int debugprint(int level, const char * fmt, ...)
+{
+    if (level <= debuglevel) {
+        va_list ap;
+        va_start(ap, fmt);
+        vfprintf(stderr, fmt ,ap);
+        va_end(ap);
+    }
 }

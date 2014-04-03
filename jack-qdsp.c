@@ -1,7 +1,6 @@
 
 #define _XOPEN_SOURCE 500
 #include <getopt.h>
-#include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -15,6 +14,7 @@ jack_port_t *output_port[NCHANNELS_MAX];
 jack_client_t *client;
 float *tempbuf[NCHANNELS_MAX];
 float *zerobuf;
+int debuglevel;
 extern struct dspfuncs_t dspfuncs[];
 
 /**
@@ -29,7 +29,7 @@ int process (jack_nframes_t nframes, void *arg)
     while (dsp)
     {
         if (dsp->sequencecount==0) {
-            fprintf(stderr,"%s: processing %p, next=%p, nframes=%d\n", __func__, dsp, dsp->next, nframes);
+            debugprint(2, "%s: processing %p, next=%p, nframes=%d\n", __func__, dsp, dsp->next, nframes);
         }
 
         if (dsp==dsphead) {
@@ -72,18 +72,18 @@ void jack_shutdown (void *arg)
 void print_help()
 {
     int i=0;
-    fprintf(stderr,"jack-qdsp -c channels [general-options] -p dsp-name <dsp-options> [-p ...]\n\n");
-    fprintf(stderr,"General options\n");
-    fprintf(stderr," -c channels\n");
-    fprintf(stderr," -s server name\n");
-    fprintf(stderr," -n client name\n");
-    fprintf(stderr," -i input ports\n");
-    fprintf(stderr," -o output ports\n");
-    fprintf(stderr,"\nDSP options\n");
+    debugprint(0, "jack-qdsp -c channels [general-options] -p dsp-name <dsp-options> [-p ...]\n\n");
+    debugprint(0, "General options\n");
+    debugprint(0, " -c channels\n");
+    debugprint(0, " -s server name\n");
+    debugprint(0, " -n client name\n");
+    debugprint(0, " -i input ports\n");
+    debugprint(0, " -o output ports\n");
+    debugprint(0, "\nDSP options\n");
 
     while (dspfuncs[i].helpfunc) {
         dspfuncs[i++].helpfunc();
-        fprintf(stderr, "\n");
+        debugprint(0,  "\n");
     }
 
     exit(EXIT_SUCCESS);
@@ -91,9 +91,9 @@ void print_help()
 
 void sig_handler(int signo)
 {
-    fprintf(stderr,"sig_handler\n");
+    debugprint(0, "sig_handler\n");
     if (signo == SIGINT) {
-        fprintf(stderr,"received SIGINT\n");
+        debugprint(0, "received SIGINT\n");
         jack_client_close (client);
         exit(0);
     }
@@ -113,8 +113,10 @@ int main (int argc, char *argv[])
     unsigned int channels;
     int i,c;
 
+    debuglevel = 0;
+
     if (signal(SIGINT, sig_handler) == SIG_ERR)
-        fprintf(stderr,"\ncan't catch SIGINT\n");
+        debugprint(0, "\ncan't catch SIGINT\n");
 
     if (argc == 1) {
         print_help();
@@ -151,9 +153,9 @@ int main (int argc, char *argv[])
                 if (!dsp->next) endprogram("Could not allocate memory for dsp.\n");
                 dsp = dsp->next;
             }
-            fprintf(stderr,"%s: dsp=%p\n",__func__, dsp);
+            debugprint(1, "%s: dsp=%p\n",__func__, dsp);
             create_dsp(dsp, optarg);
-            fprintf(stderr,"%s: dsp->next=%p\n",__func__, dsp);
+            debugprint(1, "%s: dsp->next=%p\n",__func__, dsp);
             break;
         case 'h':
         case '?':
@@ -168,22 +170,22 @@ int main (int argc, char *argv[])
     if (channels == 0) endprogram("Must specify -c\n");
 
     /* open a client connection to the JACK server */
-    fprintf(stderr,"Connecting to jack server: %s\n", server_name ? server_name : "default");
+    debugprint(0, "Connecting to jack server: %s\n", server_name ? server_name : "default");
     client = jack_client_open (client_name, options, &status, server_name);
     if (client == NULL) {
-        fprintf(stderr, "jack_client_open() failed, "
+        debugprint(0,  "jack_client_open() failed, "
              "status = 0x%2.0x\n", status);
         if (status & JackServerFailed) {
-            fprintf(stderr, "Unable to connect to JACK server\n");
+            debugprint(0,  "Unable to connect to JACK server\n");
         }
         exit (1);
     }
     if (status & JackServerStarted) {
-        fprintf(stderr, "JACK server started\n");
+        debugprint(0,  "JACK server started\n");
     }
     if (status & JackNameNotUnique) {
         client_name = jack_get_client_name(client);
-        fprintf(stderr, "unique name `%s' assigned\n", client_name);
+        debugprint(0,  "unique name `%s' assigned\n", client_name);
     }
 
     /* tell the JACK server to call `process()' whenever
@@ -201,8 +203,8 @@ int main (int argc, char *argv[])
 
     /* get the current sample rate. */
     fs = jack_get_sample_rate (client);
-    fprintf(stderr, "Samplerate: %d\n", fs);
-    fprintf(stderr, "Channels: %d\n", channels);
+    debugprint(0,  "Samplerate: %d\n", fs);
+    debugprint(0,  "Channels: %d\n", channels);
 
     dsp = dsphead;
     while (dsp) {
@@ -239,7 +241,7 @@ int main (int argc, char *argv[])
      * process() callback will start running now. */
 
     if (jack_activate (client)) {
-        fprintf (stderr, "cannot activate client");
+        debugprint(0, "cannot activate client");
         exit (1);
     }
 
@@ -254,9 +256,9 @@ int main (int argc, char *argv[])
         char * token = strtok(input_ports,",");
         i=0;
         while (token) {
-            fprintf(stderr,"Connecting to input %s\n", token);
+            debugprint(0, "Connecting to input %s\n", token);
             if (jack_connect (client, token, jack_port_name (input_port[i++]))) {
-                fprintf (stderr, "cannot connect input ports\n");
+                debugprint(0, "cannot connect input ports\n");
             }
             token = strtok(NULL, ",");
         }
@@ -266,9 +268,9 @@ int main (int argc, char *argv[])
         char * token = strtok(output_ports,",");
         i=0;
         while (token) {
-            fprintf(stderr,"Connecting to output %s\n", token);
+            debugprint(0, "Connecting to output %s\n", token);
             if (jack_connect (client, jack_port_name (output_port[i++]), token)) {
-                fprintf (stderr, "cannot connect output ports\n");
+                debugprint(0, "cannot connect output ports\n");
             }
             token = strtok(NULL, ",");
         }

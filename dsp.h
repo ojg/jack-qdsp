@@ -1,6 +1,8 @@
 #ifndef DSP_H
 #define DSP_H
 
+#include <stdio.h>
+
 #define NFRAMES_MAX 8192
 #define NCHANNELS_MAX 8
 
@@ -25,5 +27,6 @@ struct dspfuncs_t {
 
 void create_dsp(struct qdsp_t * dsp, char * subopts);
 void endprogram(char * str);
+int debugprint(int level, const char * fmt, ...);
 
 #endif

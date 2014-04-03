@@ -1,7 +1,6 @@
 
 #define _XOPEN_SOURCE 500
 #include <getopt.h>
-#include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -15,6 +14,7 @@
 unsigned int channels;
 float **tempbuf;
 float *zerobuf;
+int debuglevel;
 extern struct dspfuncs_t dspfuncs[];
 
 int process (unsigned int nframes, void *arg)
@@ -25,7 +25,7 @@ int process (unsigned int nframes, void *arg)
     while (dsp)
     {
         if (dsp->sequencecount == 0) {
-//            fprintf(stderr,"%s: processing %p, next=%p, nframes=%d, seq=%d\n", __func__, dsp, dsp->next, nframes, dsp->sequencecount);
+//            debugprint(0, "%s: processing %p, next=%p, nframes=%d, seq=%d\n", __func__, dsp, dsp->next, nframes, dsp->sequencecount);
         }
 
         dsp->nframes = nframes;
@@ -40,18 +40,18 @@ int process (unsigned int nframes, void *arg)
 void print_help()
 {
     int i=0;
-    fprintf(stderr,"file-qdsp -i inputfile -o outputfile [general-options] -p dsp-name <dsp-options> [-p ...]\n\n");
-    fprintf(stderr,"General options\n");
-    fprintf(stderr," -i input filename, all types supported by libsndfile, - for stdin\n");
-    fprintf(stderr," -o output filename, all types supported by libsndfile, - for stdout\n");
-    fprintf(stderr," -n framesize in samples, default=1024, must be a power-of-two\n");
-    fprintf(stderr," -r raw file options:\n");
-    fprintf(stderr,"    c=channels\n    r=samplerate in Hz\n    f=format 1=S8,2=S16,3=S24,4=S32,5=U8,6=F32\n");
-    fprintf(stderr,"\nDSP options\n");
+    debugprint(0, "file-qdsp -i inputfile -o outputfile [general-options] -p dsp-name <dsp-options> [-p ...]\n\n");
+    debugprint(0, "General options\n");
+    debugprint(0, " -i input filename, all types supported by libsndfile, - for stdin\n");
+    debugprint(0, " -o output filename, all types supported by libsndfile, - for stdout\n");
+    debugprint(0, " -n framesize in samples, default=1024, must be a power-of-two\n");
+    debugprint(0, " -r raw file options:\n");
+    debugprint(0, "    c=channels\n    r=samplerate in Hz\n    f=format 1=S8,2=S16,3=S24,4=S32,5=U8,6=F32\n");
+    debugprint(0, "\nDSP options\n");
 
     while (dspfuncs[i].helpfunc) {
         dspfuncs[i++].helpfunc();
-        fprintf(stderr, "\n");
+        debugprint(0,  "\n");
     }
 
     exit(EXIT_SUCCESS);
@@ -59,9 +59,9 @@ void print_help()
 
 void sig_handler(int signo)
 {
-    fprintf(stderr,"sig_handler\n");
+    debugprint(0, "sig_handler\n");
     if (signo == SIGINT) {
-        fprintf(stderr,"received SIGINT\n");
+        debugprint(0, "received SIGINT\n");
         exit(0);
     }
 }
@@ -135,33 +135,33 @@ bool get_rawfileopts(SF_INFO * input_sfinfo, char * subopts)
         switch (getsubopt(&subopts, token, &value)) {
         case FS_OPT:
             if (value == NULL) {
-                fprintf(stderr, "Missing value for suboption '%s'\n", token[FS_OPT]);
+                debugprint(0,  "Missing value for suboption '%s'\n", token[FS_OPT]);
                 errfnd = 1;
                 continue;
             }
             input_sfinfo->samplerate = atoi(value);
-            fprintf(stderr,"raw_fs=%d\n",atoi(value));
+            debugprint(1, "raw_fs=%d\n",atoi(value));
             break;
         case CH_OPT:
             if (value == NULL) {
-                fprintf(stderr, "Missing value for suboption '%s'\n", token[CH_OPT]);
+                debugprint(0,  "Missing value for suboption '%s'\n", token[CH_OPT]);
                 errfnd = 1;
                 continue;
             }
             input_sfinfo->channels = atoi(value);
-            fprintf(stderr,"raw_ch=%d\n",atoi(value));
+            debugprint(1, "raw_ch=%d\n",atoi(value));
             break;
         case FORMAT_OPT:
             if (value == NULL) {
-                fprintf(stderr, "Missing value for suboption '%s'\n", token[FORMAT_OPT]);
+                debugprint(0,  "Missing value for suboption '%s'\n", token[FORMAT_OPT]);
                 errfnd = 1;
                 continue;
             }
             input_sfinfo->format = atoi(value);
-            fprintf(stderr,"raw_format=%d\n",atoi(value));
+            debugprint(1, "raw_format=%d\n",atoi(value));
             break;
         default:
-            fprintf(stderr, "%s: No match found for token: /%s/\n", __func__, value);
+            debugprint(0,  "%s: No match found for token: /%s/\n", __func__, value);
             errfnd = 1;
             break;
         }
@@ -184,9 +184,10 @@ int main (int argc, char *argv[])
     bool israwinput = false;
     struct timespec t,t2,ttot,res;
     int i,c;
+    debuglevel = 0;
 
     if (signal(SIGINT, sig_handler) == SIG_ERR)
-        fprintf(stderr,"\ncan't catch SIGINT\n");
+        debugprint(0, "\ncan't catch SIGINT\n");
 
     if (argc == 1) {
         print_help();
@@ -220,9 +221,9 @@ int main (int argc, char *argv[])
                 if (!dsp->next) endprogram("Could not allocate memory for dsp.\n");
                 dsp = dsp->next;
             }
-            fprintf(stderr,"%s: dsp=%p\n",__func__, dsp);
+            debugprint(1, "%s: dsp=%p\n",__func__, dsp);
             create_dsp(dsp, optarg);
-            fprintf(stderr,"%s: dsp->next=%p\n",__func__, dsp);
+            debugprint(1, "%s: dsp->next=%p\n",__func__, dsp);
             break;
         case 'h':
         case '?':
@@ -232,7 +233,7 @@ int main (int argc, char *argv[])
     }
 
     for (i = optind; i < argc; i++)
-        fprintf(stderr, "Non-option argument %s\n", argv[i]);
+        debugprint(0,  "Non-option argument %s\n", argv[i]);
 
     if ((nframes == 0) || (nframes & (nframes - 1))) endprogram("Framesize must be a power of two.\n");
 
@@ -242,19 +243,19 @@ int main (int argc, char *argv[])
     else
         memset(&input_sfinfo, 0, sizeof(input_sfinfo));
     if (!(input_file = sf_open(input_filename, SFM_READ, &input_sfinfo))) {
-        fprintf(stderr,"Could not open file %s for reading.\n", input_filename);
+        debugprint(0, "Could not open file %s for reading.\n", input_filename);
         endprogram("");
     }
 
     memcpy(&output_sfinfo, &input_sfinfo, sizeof(input_sfinfo));
     if (!(output_file = sf_open(output_filename, SFM_WRITE, &output_sfinfo))) {
-        fprintf(stderr,"Could not open file %s for writing.\n", output_filename);
+        debugprint(0, "Could not open file %s for writing.\n", output_filename);
         endprogram("");
     }
 
     /* get the current samplerate. */
-    fprintf(stderr, "input file samplerate: %d\n", input_sfinfo.samplerate);
-    fprintf(stderr, "input file channels: %d\n", input_sfinfo.channels);
+    debugprint(0,  "input file samplerate: %d\n", input_sfinfo.samplerate);
+    debugprint(0,  "input file channels: %d\n", input_sfinfo.channels);
     channels = input_sfinfo.channels;
     if (channels < 1 || channels > NCHANNELS_MAX) endprogram("Invalid number of channels specified\n");
 
@@ -304,10 +305,10 @@ int main (int argc, char *argv[])
     }
     clock_getres(CLOCK_THREAD_CPUTIME_ID, &res);
     /* wrap up */
-    fprintf(stderr, "Done! Processed %d samples in %lld.%.9ld sec, res=%ld nsec\n", totframes, (long long)ttot.tv_sec, ttot.tv_nsec, res.tv_nsec);
+    debugprint(0,  "Done! Processed %d samples in %lld.%.9ld sec, res=%ld nsec\n", totframes, (long long)ttot.tv_sec, ttot.tv_nsec, res.tv_nsec);
 
-    if (sf_close(input_file)!=0) fprintf(stderr, "Failed closing %s: %s\n", input_filename, sf_strerror(input_file));
-    if (sf_close(output_file)!=0) fprintf(stderr, "Failed closing %s: %s\n", output_filename, sf_strerror(output_file));
+    if (sf_close(input_file)!=0) debugprint(0,  "Failed closing %s: %s\n", input_filename, sf_strerror(input_file));
+    if (sf_close(output_file)!=0) debugprint(0,  "Failed closing %s: %s\n", output_filename, sf_strerror(output_file));
 
     return 0;
 }

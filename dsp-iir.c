@@ -2,7 +2,6 @@
 #include <getopt.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
 #include <math.h>
@@ -53,8 +52,8 @@ int calc_coeffs(struct qdsp_iir_state_t * state, int fs)
     double alpha = sinw0/(2.0*state->q0);
     double b0,b1,b2,a0,a1,a2;
     double q0,q1,w1;
-    fprintf(stderr,"%s iir type is %d\n", __func__, state->type);
-    fprintf(stderr,"%s fs=%d, w0=%.3f, alpha=%.3f, cosw0=%.3f\n", __func__, fs, w0, alpha, cosw0);
+    debugprint(1, "%s iir type is %d\n", __func__, state->type);
+    debugprint(1, "%s fs=%d, w0=%.3f, alpha=%.3f, cosw0=%.3f\n", __func__, fs, w0, alpha, cosw0);
 
     switch (state->type) {
     case LP2_OPT:
@@ -128,7 +127,7 @@ int calc_coeffs(struct qdsp_iir_state_t * state, int fs)
     state->coeffs.a1 = a1 / a0;
     state->coeffs.a2 = a2 / a0;
 
-    fprintf(stderr,"%s coeffs: b0=%.4g, b1=%.4g, b2=%.4g, a1=%.4g, a2=%.4g\n", __func__,
+    debugprint(1, "%s coeffs: b0=%.4g, b1=%.4g, b2=%.4g, a1=%.4g, a2=%.4g\n", __func__,
             state->coeffs.b0, state->coeffs.b1, state->coeffs.b2, state->coeffs.a1, state->coeffs.a2);
 
     return 0;
@@ -278,24 +277,24 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
     dsp->state = (void*)state;
     dsp->process = iir_process;
 
-    fprintf(stderr,"%s subopts: %s\n", __func__, *subopts);
+    debugprint(1, "%s subopts: %s\n", __func__, *subopts);
     while (**subopts != '\0' && !errfnd) {
-        fprintf(stderr,"%s checking subopts: %s\n", __func__, *subopts);
+        debugprint(1, "%s checking subopts: %s\n", __func__, *subopts);
         curtoken = getsubopt(subopts, token, &value);
 
         if (curtoken < 0) {
-            fprintf(stderr, "%s: No match found for token '%s'\n", __func__, value);
+            debugprint(0,  "%s: No match found for token '%s'\n", __func__, value);
             continue;
         }
 
         if (curtoken >= FIRST_VALUETOKEN && value == NULL) {
-            fprintf(stderr, "Missing value for suboption '%s'\n", token[curtoken]);
+            debugprint(0,  "Missing value for suboption '%s'\n", token[curtoken]);
             errfnd = 1;
             continue;
         }
 
         if (curtoken < FIRST_VALUETOKEN && value != NULL) {
-            fprintf(stderr, "Ignoring value for suboption '%s'\n", token[curtoken]);
+            debugprint(0,  "Ignoring value for suboption '%s'\n", token[curtoken]);
         }
 
         switch (curtoken) {
@@ -313,7 +312,7 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
         case AP2_OPT:
         case AP1_OPT:
             state->type = curtoken;
-            fprintf(stderr,"%s iir type is %s\n", __func__, token[curtoken]);
+            debugprint(0, "%s iir type is %s\n", __func__, token[curtoken]);
             break;
         case F0_OPT:
             state->f0 = strtod(value, NULL);
@@ -346,7 +345,7 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
             state->coeffs.b2 = strtod(value, NULL);
             break;
         default:
-            fprintf(stderr, "%s: No match found for token '%s'\n", __func__, value);
+            debugprint(0,  "%s: No match found for token '%s'\n", __func__, value);
             continue;
         }
 
@@ -359,7 +358,7 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
             validparams = true;
     }
     if (!validparams) {
-        fprintf(stderr, "%s: Missing parameters for iir type '%s'\n", __func__, token[state->type]);
+        debugprint(0,  "%s: Missing parameters for iir type '%s'\n", __func__, token[state->type]);
         errfnd = 1;
     }
 
@@ -370,9 +369,9 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
 
 void help_iir(void)
 {
-	fprintf(stderr,"  IIR options\n");
-	fprintf(stderr,"    Name: iir\n");
-	fprintf(stderr,"    type: direct\n");
-	fprintf(stderr,"        a1=,a2=,b0=,b1=,b2=coefficient\n");
-	fprintf(stderr,"    Example: -p iir,direct,a1=1,a2=0,b0=1,b1=2,b2=1\n");
+	debugprint(0, "  IIR options\n");
+	debugprint(0, "    Name: iir\n");
+	debugprint(0, "    type: direct\n");
+	debugprint(0, "        a1=,a2=,b0=,b1=,b2=coefficient\n");
+	debugprint(0, "    Example: -p iir,direct,a1=1,a2=0,b0=1,b1=2,b2=1\n");
 }

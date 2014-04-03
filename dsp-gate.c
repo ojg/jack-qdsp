@@ -2,7 +2,6 @@
 #include <getopt.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include "dsp.h"
@@ -98,29 +97,29 @@ int create_gate(struct qdsp_t * dsp, char ** subopts)
     dsp->state = (void*)state;
     state->hold=0;
 
-    fprintf(stderr,"create_gate subopts: %s\n", *subopts);
+    debugprint(1, "%s: subopts: %s\n", __func__, *subopts);
     while (**subopts != '\0' && !errfnd) {
         switch (getsubopt(subopts, token, &value)) {
         case THRESHOLD_OPT:
             if (value == NULL) {
-                fprintf(stderr, "Missing value for suboption '%s'\n", token[THRESHOLD_OPT]);
+                debugprint(0, "Missing value for suboption '%s'\n", token[THRESHOLD_OPT]);
                 errfnd = 1;
                 continue;
             }
             state->threshold = powf(10,atof(value)/20);
-            fprintf(stderr,"threshold=%f\n",atof(value));
+            debugprint(0, "%s: threshold=%f\n", __func__, atof(value));
             break;
         case HOLDTIME_OPT:
             if (value == NULL) {
-                fprintf(stderr, "Missing value for suboption '%s'\n", token[HOLDTIME_OPT]);
+                debugprint(0, "Missing value for suboption '%s'\n", token[HOLDTIME_OPT]);
                 errfnd = 1;
                 continue;
             }
             state->hold = atoi(value);
-            fprintf(stderr,"holdtime=%d\n",atoi(value));
+            debugprint(0, "%s: holdtime=%d\n", __func__, atoi(value));
             break;
         default:
-            fprintf(stderr, "create_gate: No match found for token: /%s/\n", value);
+            debugprint(0, "%s: No match found for token: /%s/\n", __func__, value);
             errfnd = 1;
             break;
         }
@@ -135,7 +134,7 @@ int create_gate(struct qdsp_t * dsp, char ** subopts)
 
 void help_gate(void)
 {
-	fprintf(stderr,"  Gate options\n");
-	fprintf(stderr,"    Name: gate\n    t=threshold (dBFS)\n    h=holdtime (sec)\n");
-	fprintf(stderr,"    Example: -p gate,t=-80,h=30\n");
+    debugprint(0, "  Gate options\n");
+    debugprint(0, "    Name: gate\n    t=threshold (dBFS)\n    h=holdtime (sec)\n");
+    debugprint(0, "    Example: -p gate,t=-80,h=30\n");
 }

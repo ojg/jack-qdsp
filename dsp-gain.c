@@ -2,7 +2,6 @@
 #include <getopt.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include "dsp.h"
 
 
@@ -40,20 +39,20 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
     dsp->state = (void*)state;
 
 
-    fprintf(stderr,"%s subopts: %s\n", __func__, *subopts);
+    debugprint(1, "%s subopts: %s\n", __func__, *subopts);
     while (**subopts != '\0' && !errfnd) {
         switch (getsubopt(subopts, token, &value)) {
         case GAIN_OPT:
             if (value == NULL) {
-                fprintf(stderr, "Missing value for suboption '%s'\n", token[GAIN_OPT]);
+                debugprint(0, "Missing value for suboption '%s'\n", token[GAIN_OPT]);
                 errfnd = 1;
                 continue;
             }
             state->gain = atof(value);
-            fprintf(stderr,"gain=%f\n",atof(value));
+            debugprint(0, "%s: gain=%f\n", __func__, atof(value));
             break;
         default:
-            fprintf(stderr, "%s: No match found for token: /%s/\n", __func__, value);
+            debugprint(0, "%s: No match found for token: /%s/\n", __func__, value);
             errfnd = 1;
             break;
         }
@@ -66,7 +65,7 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
 
 void help_gain(void)
 {
-	fprintf(stderr,"  Gain options\n");
-	fprintf(stderr,"    Name: gain\n    g=gain value (linear)\n");
-	fprintf(stderr,"    Example: -p gain,g=0.5\n");
+    debugprint(0, "  Gain options\n");
+    debugprint(0, "    Name: gain\n    g=gain value (linear)\n");
+    debugprint(0, "    Example: -p gain,g=0.5\n");
 }
