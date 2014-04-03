@@ -103,8 +103,7 @@ int create_gate(struct qdsp_t * dsp, char ** subopts)
         switch (getsubopt(subopts, token, &value)) {
         case THRESHOLD_OPT:
             if (value == NULL) {
-                fprintf(stderr, "Missing value for "
-                        "suboption '%s'\n", token[THRESHOLD_OPT]);
+                fprintf(stderr, "Missing value for suboption '%s'\n", token[THRESHOLD_OPT]);
                 errfnd = 1;
                 continue;
             }
@@ -113,8 +112,7 @@ int create_gate(struct qdsp_t * dsp, char ** subopts)
             break;
         case HOLDTIME_OPT:
             if (value == NULL) {
-                fprintf(stderr, "Missing value for "
-                        "suboption '%s'\n", token[HOLDTIME_OPT]);
+                fprintf(stderr, "Missing value for suboption '%s'\n", token[HOLDTIME_OPT]);
                 errfnd = 1;
                 continue;
             }
@@ -122,8 +120,7 @@ int create_gate(struct qdsp_t * dsp, char ** subopts)
             fprintf(stderr,"holdtime=%d\n",atoi(value));
             break;
         default:
-            fprintf(stderr, "create_gate: No match found "
-                    "for token: /%s/\n", value);
+            fprintf(stderr, "create_gate: No match found for token: /%s/\n", value);
             errfnd = 1;
             break;
         }

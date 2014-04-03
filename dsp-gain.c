@@ -45,8 +45,7 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
         switch (getsubopt(subopts, token, &value)) {
         case GAIN_OPT:
             if (value == NULL) {
-                fprintf(stderr, "Missing value for "
-                        "suboption '%s'\n", token[GAIN_OPT]);
+                fprintf(stderr, "Missing value for suboption '%s'\n", token[GAIN_OPT]);
                 errfnd = 1;
                 continue;
             }
@@ -54,8 +53,7 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
             fprintf(stderr,"gain=%f\n",atof(value));
             break;
         default:
-            fprintf(stderr, "%s: No match found "
-                    "for token: /%s/\n", __func__, value);
+            fprintf(stderr, "%s: No match found for token: /%s/\n", __func__, value);
             errfnd = 1;
             break;
         }

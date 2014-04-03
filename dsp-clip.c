@@ -50,8 +50,7 @@ int create_clip(struct qdsp_t * dsp, char ** subopts)
         switch (getsubopt(subopts, token, &value)) {
         case THRESHOLD_OPT:
             if (value == NULL) {
-                fprintf(stderr, "Missing value for "
-                        "suboption '%s'\n", token[THRESHOLD_OPT]);
+                fprintf(stderr, "Missing value for suboption '%s'\n", token[THRESHOLD_OPT]);
                 errfnd = 1;
                 continue;
             }
@@ -59,8 +58,7 @@ int create_clip(struct qdsp_t * dsp, char ** subopts)
             fprintf(stderr,"threshold=%f\n",atof(value));
             break;
         default:
-            fprintf(stderr, "%s: No match found "
-                    "for token: /%s/\n", __func__, value);
+            fprintf(stderr, "%s: No match found for token: /%s/\n", __func__, value);
             errfnd = 1;
             break;
         }
