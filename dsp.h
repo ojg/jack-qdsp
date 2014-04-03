@@ -18,6 +18,8 @@ struct qdsp_t {
     void (*init)(struct qdsp_t *);
 };
 
+void create_dsp(struct qdsp_t * dsp, char * subopts);
+
 int create_gate(struct qdsp_t * dsp, char ** subopts);
 int create_gain(struct qdsp_t * dsp, char ** subopts);
 int create_iir(struct qdsp_t * dsp, char ** subopts);
@@ -27,5 +29,7 @@ void help_gain(void);
 void help_gate(void);
 void help_iir(void);
 void help_clip(void);
+
+void endprogram(char * str);
 
 #endif

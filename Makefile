@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-c -O3 -msse2 -ffast-math -march=native -ftree-vectorize -std=c99
 LDFLAGS_JACK=-ljack
 LDFLAGS_FILE=-lsndfile -lrt
-SOURCES_COMMON=dsp-gate.c dsp-gain.c dsp-iir.c dsp-clip.c
+SOURCES_COMMON=dsp.c dsp-gate.c dsp-gain.c dsp-iir.c dsp-clip.c
 SOURCES_JACK=$(SOURCES_COMMON) jack-qdsp.c
 SOURCES_FILE=$(SOURCES_COMMON) file-qdsp.c
 DEPS=dsp.h
