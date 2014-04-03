@@ -111,7 +111,7 @@ int main (int argc, char *argv[])
     struct qdsp_t *dsp;
     unsigned int fs;
     unsigned int channels;
-    int i,c;
+    int i,c,itmp;
 
     debuglevel = 0;
 
@@ -124,7 +124,7 @@ int main (int argc, char *argv[])
     }
 
     /* Get command line options */
-    while ((c = getopt (argc, argv, "c:n:s:i:o:p:h?")) != -1) {
+    while ((c = getopt (argc, argv, "c:n:s:i:o:p:v::h?")) != -1) {
         switch (c) {
         case 'c':
             channels = atoi(optarg);
@@ -157,6 +157,18 @@ int main (int argc, char *argv[])
             create_dsp(dsp, optarg);
             debugprint(1, "%s: dsp->next=%p\n",__func__, dsp);
             break;
+        case 'v':
+            if (optarg) {
+                itmp = atoi(optarg);
+                debugprint(0, "%s: verbosity=%d\n",__func__, itmp);
+                if (itmp<0)
+                    debuglevel = 0;
+                else
+                    debuglevel = itmp;
+            }
+            else
+                debuglevel = 1;
+            break;
         case 'h':
         case '?':
             print_help();
@@ -164,8 +176,11 @@ int main (int argc, char *argv[])
         }
     }
 
-    for (i = optind; i < argc; i++)
-        printf ("Non-option argument %s\n", argv[i]);
+    if (optind != argc) {
+        for (i = optind; i < argc; i++)
+            debugprint(0,  "Non-option argument %s\n\n", argv[i]);
+        print_help();
+    }
 
     if (channels == 0) endprogram("Must specify -c\n");
 
@@ -173,8 +188,7 @@ int main (int argc, char *argv[])
     debugprint(0, "Connecting to jack server: %s\n", server_name ? server_name : "default");
     client = jack_client_open (client_name, options, &status, server_name);
     if (client == NULL) {
-        debugprint(0,  "jack_client_open() failed, "
-             "status = 0x%2.0x\n", status);
+        debugprint(0,  "jack_client_open() failed, status = 0x%2.0x\n", status);
         if (status & JackServerFailed) {
             debugprint(0,  "Unable to connect to JACK server\n");
         }

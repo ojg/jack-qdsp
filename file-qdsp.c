@@ -183,7 +183,7 @@ int main (int argc, char *argv[])
     unsigned int nframes=0, totframes=0;
     bool israwinput = false;
     struct timespec t,t2,ttot,res;
-    int i,c;
+    int i,c,itmp;
     debuglevel = 0;
 
     if (signal(SIGINT, sig_handler) == SIG_ERR)
@@ -195,7 +195,7 @@ int main (int argc, char *argv[])
     }
 
     /* Get command line options */
-    while ((c = getopt (argc, argv, "r:n:i:o:p:h?")) != -1) {
+    while ((c = getopt (argc, argv, "r:n:i:o:p:v::h?")) != -1) {
         switch (c) {
         case 'r':
             // for raw file support
@@ -225,6 +225,18 @@ int main (int argc, char *argv[])
             create_dsp(dsp, optarg);
             debugprint(1, "%s: dsp->next=%p\n",__func__, dsp);
             break;
+        case 'v':
+            if (optarg) {
+                itmp = atoi(optarg);
+                debugprint(0, "%s: verbosity=%d\n",__func__, itmp);
+                if (itmp<0)
+                    debuglevel = 0;
+                else
+                    debuglevel = itmp;
+            }
+            else
+                debuglevel = 1;
+            break;
         case 'h':
         case '?':
             print_help();
@@ -232,8 +244,11 @@ int main (int argc, char *argv[])
         }
     }
 
-    for (i = optind; i < argc; i++)
-        debugprint(0,  "Non-option argument %s\n", argv[i]);
+    if (optind != argc) {
+        for (i = optind; i < argc; i++)
+            debugprint(0,  "Non-option argument %s\n\n", argv[i]);
+        print_help();
+    }
 
     if ((nframes == 0) || (nframes & (nframes - 1))) endprogram("Framesize must be a power of two.\n");
 
