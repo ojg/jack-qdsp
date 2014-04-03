@@ -251,6 +251,11 @@ int main (int argc, char *argv[])
     if (signal(SIGINT, sig_handler) == SIG_ERR)
         fprintf(stderr,"\ncan't catch SIGINT\n");
 
+    if (argc == 1) {
+        print_help();
+        exit(1);
+    }
+
     /* Get command line options */
     while ((c = getopt (argc, argv, "r:n:i:o:p:h?")) != -1) {
         switch (c) {
