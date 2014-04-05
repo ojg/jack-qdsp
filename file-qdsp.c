@@ -13,7 +13,7 @@
 
 unsigned int channels;
 float **tempbuf;
-float *zerobuf;
+const float *zerobuf;
 int debuglevel;
 extern struct dspfuncs_t dspfuncs[];
 
@@ -221,9 +221,9 @@ int main (int argc, char *argv[])
                 if (!dsp->next) endprogram("Could not allocate memory for dsp.\n");
                 dsp = dsp->next;
             }
-            debugprint(1, "%s: dsp=%p\n",__func__, dsp);
+            debugprint(2, "%s: dsp=%p\n",__func__, dsp);
             create_dsp(dsp, optarg);
-            debugprint(1, "%s: dsp->next=%p\n",__func__, dsp);
+            debugprint(2, "%s: dsp->next=%p\n",__func__, dsp);
             break;
         case 'v':
             if (optarg) {

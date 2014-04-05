@@ -13,7 +13,7 @@ jack_port_t *input_port[NCHANNELS_MAX];
 jack_port_t *output_port[NCHANNELS_MAX];
 jack_client_t *client;
 float *tempbuf[NCHANNELS_MAX];
-float *zerobuf;
+const float *zerobuf;
 int debuglevel;
 extern struct dspfuncs_t dspfuncs[];
 
@@ -51,7 +51,6 @@ int process (jack_nframes_t nframes, void *arg)
         }
 
         dsp->nframes = nframes;
-        dsp->zerobuf = zerobuf;
         dsp->sequencecount++;
         dsp->process((void*)dsp);
         dsp = dsp->next;
@@ -153,9 +152,9 @@ int main (int argc, char *argv[])
                 if (!dsp->next) endprogram("Could not allocate memory for dsp.\n");
                 dsp = dsp->next;
             }
-            debugprint(1, "%s: dsp=%p\n",__func__, dsp);
+            debugprint(2, "%s: dsp=%p\n",__func__, dsp);
             create_dsp(dsp, optarg);
-            debugprint(1, "%s: dsp->next=%p\n",__func__, dsp);
+            debugprint(2, "%s: dsp->next=%p\n",__func__, dsp);
             break;
         case 'v':
             if (optarg) {
@@ -224,6 +223,7 @@ int main (int argc, char *argv[])
     while (dsp) {
         dsp->fs = fs;
         dsp->nchannels = channels;
+        dsp->zerobuf = zerobuf;
         dsp->init(dsp);
         dsp = dsp->next;
     }
