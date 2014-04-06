@@ -84,7 +84,7 @@ void endprogram(char * str)
     exit(EXIT_FAILURE);
 }
 
-int debugprint(int level, const char * fmt, ...)
+void debugprint(int level, const char * fmt, ...)
 {
     if (level <= debuglevel) {
         va_list ap;

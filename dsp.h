@@ -27,6 +27,6 @@ struct dspfuncs_t {
 
 void create_dsp(struct qdsp_t * dsp, char * subopts);
 void endprogram(char * str);
-int debugprint(int level, const char * fmt, ...);
+void debugprint(int level, const char * fmt, ...);
 
 #endif
