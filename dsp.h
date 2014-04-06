@@ -8,9 +8,9 @@
 
 struct qdsp_t {
     struct qdsp_t *next;
-    float *inbufs[NCHANNELS_MAX];
-    float *outbufs[NCHANNELS_MAX];
-    const float *zerobuf;
+    float * restrict inbufs[NCHANNELS_MAX];
+    float * restrict outbufs[NCHANNELS_MAX];
+    const float * restrict zerobuf;
     unsigned int fs;
     unsigned int nchannels;
     unsigned int nframes;

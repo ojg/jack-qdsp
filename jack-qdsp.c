@@ -6,13 +6,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <jack/jack.h>
 #include "dsp.h"
 
 jack_port_t *input_port[NCHANNELS_MAX];
 jack_port_t *output_port[NCHANNELS_MAX];
 jack_client_t *client;
-float *tempbuf[NCHANNELS_MAX];
+float *tempbufA[NCHANNELS_MAX];
+float *tempbufB[NCHANNELS_MAX];
 const float *zerobuf;
 int debuglevel;
 extern struct dspfuncs_t dspfuncs[];
@@ -25,11 +27,12 @@ int process (jack_nframes_t nframes, void *arg)
 {
     struct qdsp_t * dsp = (struct qdsp_t *)arg;
     struct qdsp_t * dsphead = dsp;
+    bool ping = false;
 
     while (dsp)
     {
         if (dsp->sequencecount==0) {
-            debugprint(2, "%s: processing %p, next=%p, nframes=%d\n", __func__, dsp, dsp->next, nframes);
+            //debugprint(2, "%s: processing %p, next=%p, nframes=%d\n", __func__, dsp, dsp->next, nframes);
         }
 
         if (dsp==dsphead) {
@@ -38,22 +41,27 @@ int process (jack_nframes_t nframes, void *arg)
         }
         else {
             for (int i=0; i<dsp->nchannels; i++)
-                dsp->inbufs[i] = tempbuf[i];
+                dsp->inbufs[i] = ping ? tempbufA[i] : tempbufB[i];
         }
 
         if (!dsp->next) {
-            for (int i=0; i<dsp->nchannels; i++)
+            for (int i=0; i<dsp->nchannels; i++) {
                 dsp->outbufs[i] = jack_port_get_buffer (output_port[i], nframes);
+                if (dsp->outbufs[i] == dsp->inbufs[i]) {
+                    endprogram("inbufs == outbufs\n");
+                }
+            }
         }
         else {
             for (int i=0; i<dsp->nchannels; i++)
-                dsp->outbufs[i] = tempbuf[i];
+                dsp->outbufs[i] = ping ? tempbufB[i] : tempbufA[i];
         }
 
         dsp->nframes = nframes;
         dsp->sequencecount++;
         dsp->process((void*)dsp);
         dsp = dsp->next;
+        ping = !ping;
     }
 
     return 0;
@@ -243,10 +251,12 @@ int main (int argc, char *argv[])
     }
 
     /* allocate tempbuf as one large buffer */
-    tempbuf[0] = (float*)malloc(channels*NFRAMES_MAX*sizeof(float));
-    if (!tempbuf[0]) endprogram("Could not allocate memory for temporary buffer.\n");
-    for (i=1; i<channels; i++)
-        tempbuf[i] = tempbuf[0] + i*NFRAMES_MAX;
+    tempbufA[0] = (float*)malloc(2*channels*NFRAMES_MAX*sizeof(float));
+    if (!tempbufA[0]) endprogram("Could not allocate memory for temporary buffer.\n");
+    for (i=0; i<channels; i++) {
+        tempbufA[i] = tempbufA[0] + i*NFRAMES_MAX;
+        tempbufB[i] = tempbufA[0] + i*NFRAMES_MAX + channels*NFRAMES_MAX;
+    }
 
     /* allocate a common zerobuf */
     zerobuf = (float*)calloc(NFRAMES_MAX, sizeof(float));
