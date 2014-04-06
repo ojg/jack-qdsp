@@ -180,7 +180,7 @@ int main (int argc, char *argv[])
     struct qdsp_t *dsphead = NULL;
     struct qdsp_t *dsp;
     float *readbuf, *writebuf;
-    unsigned int nframes=0, totframes=0;
+    unsigned int nframes=0, totframes=0, nframesread=0;
     bool israwinput = false;
     struct timespec t,t2,ttot,res;
     int i,c,itmp;
@@ -308,14 +308,17 @@ int main (int argc, char *argv[])
     /* Run processing until EOF */
     ttot.tv_sec=0;
     ttot.tv_nsec=0;
-    while (nframes == sf_readf_float(input_file, readbuf, nframes)) {
+    while (nframesread = sf_readf_float(input_file, readbuf, nframes)) {
+        if (nframesread < nframes) {
+            memset(readbuf + (nframesread * channels), 0, (nframes-nframesread) * channels * sizeof(float));
+        }
         totframes += nframes;
         deinterleave(tempbuf[0], readbuf, channels, nframes);
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t);
         process(nframes, dsphead);
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t2); t = timespecsub(t,t2); ttot = timespecadd(t,ttot);
         interleave(writebuf, tempbuf[0], channels, nframes);
-        if (nframes != sf_writef_float(output_file, writebuf, nframes))
+        if (nframesread != sf_writef_float(output_file, writebuf, nframesread))
             break;
     }
     clock_getres(CLOCK_THREAD_CPUTIME_ID, &res);
