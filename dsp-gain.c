@@ -28,7 +28,7 @@ void gain_process(struct qdsp_t * dsp)
             dsp->outbufs[i][n] = state->gain * delayline[n];
             delayline[n] = dsp->inbufs[i][k];
         }
-        debugprint(3, "n=%d\t", n);
+        debugprint(3, "i=%p, o=%p, n=%d\t", dsp->inbufs[i], dsp->outbufs[i], n);
         for (k=0; n<dsp->nframes; n++, k++) {
             dsp->outbufs[i][n] = state->gain * dsp->inbufs[i][k];
         }
