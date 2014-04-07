@@ -14,10 +14,11 @@
 int debuglevel;
 extern struct dspfuncs_t dspfuncs[];
 
-int process (unsigned int nframes, void *arg)
+struct qdsp_t * process (unsigned int nframes, void *arg)
 {
-    struct qdsp_t * dsp = (struct qdsp_t *)arg;
-    struct qdsp_t * dsphead = dsp;
+    struct qdsp_t * dsphead = (struct qdsp_t *)arg;
+    struct qdsp_t * dsp = dsphead;
+    struct qdsp_t * lastdsp;
 
     while (dsp)
     {
@@ -28,10 +29,11 @@ int process (unsigned int nframes, void *arg)
         dsp->nframes = nframes;
         dsp->sequencecount++;
         dsp->process((void*)dsp);
+        lastdsp = dsp;
         dsp = dsp->next;
     }
 
-    return 0;
+    return lastdsp;
 }
 
 void print_help()
@@ -182,11 +184,7 @@ int main (int argc, char *argv[])
     struct timespec t,t2,ttot,res;
     int i,c,itmp;
     debuglevel = 0;
-    bool ping = false;
     unsigned int channels;
-    float **tempbufA;
-    float **tempbufB;
-    const float *zerobuf;
 
     if (signal(SIGINT, sig_handler) == SIG_ERR)
         debugprint(0, "\ncan't catch SIGINT\n");
@@ -276,48 +274,10 @@ int main (int argc, char *argv[])
     channels = input_sfinfo.channels;
     if (channels < 1 || channels > NCHANNELS_MAX) endprogram("Invalid number of channels specified\n");
 
-    /* allocate tempbuf as one large buffer */
-    tempbufA = (float**)malloc(channels*sizeof(float*));
-    tempbufB = (float**)malloc(channels*sizeof(float*));
-    tempbufA[0] = (float*)malloc(2*channels*nframes*sizeof(float));
-    if (!tempbufA[0]) endprogram("Could not allocate memory for temporary buffer.\n");
-    for (i=0; i<channels; i++) {
-        tempbufA[i] = tempbufA[0] + i*nframes;
-        tempbufB[i] = tempbufA[0] + i*nframes + channels*nframes;
-    }
-
-    /* allocate a common zerobuf */
-    zerobuf = (const float*)calloc(nframes, sizeof(float));
+    init_dsp(dsphead, input_sfinfo.samplerate, channels, nframes);
 
     readbuf = (float*)malloc(nframes*channels*sizeof(float));
     writebuf = (float*)malloc(nframes*channels*sizeof(float));
-
-    /* setup all static dsp list info */
-    dsp = dsphead;
-    ping = false;
-    while (dsp) {
-        dsp->fs = input_sfinfo.samplerate;
-        dsp->nchannels = input_sfinfo.channels;
-        dsp->zerobuf = zerobuf;
-
-        if (ping) {
-            for (int i=0; i<dsp->nchannels; i++) {
-                dsp->inbufs[i] = tempbufA[i];
-                dsp->outbufs[i] = tempbufB[i];
-            }
-        }
-        else {
-            for (int i=0; i<dsp->nchannels; i++) {
-                dsp->inbufs[i] = tempbufB[i];
-                dsp->outbufs[i] = tempbufA[i];
-            }
-        }
-
-        dsp->init(dsp);
-
-        dsp = dsp->next;
-        ping = !ping;
-    }
 
     /* Run processing until EOF */
     ttot.tv_sec=0;
@@ -327,11 +287,13 @@ int main (int argc, char *argv[])
             memset(readbuf + (nframesread * channels), 0, (nframes-nframesread) * channels * sizeof(float));
         }
         totframes += nframes;
+        debugprint(3, "inbufs=%p\n", dsp->inbufs[0]);
         deinterleave(dsphead->inbufs[0], readbuf, channels, nframes);
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t);
-        process(nframes, dsphead);
+        dsp = process(nframes, dsphead);
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t2); t = timespecsub(t,t2); ttot = timespecadd(t,ttot);
-        interleave(writebuf, ping ? tempbufA[0] : tempbufB[0], channels, nframes);
+        debugprint(3, "outbufs=%p\n", dsp->outbufs[0]);
+        interleave(writebuf, dsp->outbufs[0], channels, nframes);
         if (nframesread != sf_writef_float(output_file, writebuf, nframesread))
             break;
     }

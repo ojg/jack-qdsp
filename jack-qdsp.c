@@ -13,9 +13,6 @@
 jack_port_t *input_port[NCHANNELS_MAX];
 jack_port_t *output_port[NCHANNELS_MAX];
 jack_client_t *client;
-float *tempbufA[NCHANNELS_MAX];
-float *tempbufB[NCHANNELS_MAX];
-const float *zerobuf;
 int debuglevel;
 extern struct dspfuncs_t dspfuncs[];
 
@@ -25,23 +22,19 @@ extern struct dspfuncs_t dspfuncs[];
  */
 int process (jack_nframes_t nframes, void *arg)
 {
-    struct qdsp_t * dsp = (struct qdsp_t *)arg;
-    struct qdsp_t * dsphead = dsp;
+    struct qdsp_t * dsphead = (struct qdsp_t *)arg;
+    struct qdsp_t * dsp = dsphead;
     bool ping = false;
+
+    if (dsp) {
+        for (int i=0; i<dsp->nchannels; i++)
+            dsp->inbufs[i] = jack_port_get_buffer (input_port[i], nframes);
+    }
 
     while (dsp)
     {
         if (dsp->sequencecount==0) {
             //debugprint(2, "%s: processing %p, next=%p, nframes=%d\n", __func__, dsp, dsp->next, nframes);
-        }
-
-        if (dsp==dsphead) {
-            for (int i=0; i<dsp->nchannels; i++)
-                dsp->inbufs[i] = jack_port_get_buffer (input_port[i], nframes);
-        }
-        else {
-            for (int i=0; i<dsp->nchannels; i++)
-                dsp->inbufs[i] = ping ? tempbufA[i] : tempbufB[i];
         }
 
         if (!dsp->next) {
@@ -51,10 +44,6 @@ int process (jack_nframes_t nframes, void *arg)
                     endprogram("inbufs == outbufs\n");
                 }
             }
-        }
-        else {
-            for (int i=0; i<dsp->nchannels; i++)
-                dsp->outbufs[i] = ping ? tempbufB[i] : tempbufA[i];
         }
 
         dsp->nframes = nframes;
@@ -227,14 +216,7 @@ int main (int argc, char *argv[])
     debugprint(0,  "Samplerate: %d\n", fs);
     debugprint(0,  "Channels: %d\n", channels);
 
-    dsp = dsphead;
-    while (dsp) {
-        dsp->fs = fs;
-        dsp->nchannels = channels;
-        dsp->zerobuf = zerobuf;
-        dsp->init(dsp);
-        dsp = dsp->next;
-    }
+    init_dsp(dsphead, fs, channels, NFRAMES_MAX);
 
     /* create ports */
     for (i=0; i<channels; i++) {
@@ -249,17 +231,6 @@ int main (int argc, char *argv[])
                                       JACK_DEFAULT_AUDIO_TYPE,
                                       JackPortIsOutput, 0);
     }
-
-    /* allocate tempbuf as one large buffer */
-    tempbufA[0] = (float*)malloc(2*channels*NFRAMES_MAX*sizeof(float));
-    if (!tempbufA[0]) endprogram("Could not allocate memory for temporary buffer.\n");
-    for (i=0; i<channels; i++) {
-        tempbufA[i] = tempbufA[0] + i*NFRAMES_MAX;
-        tempbufB[i] = tempbufA[0] + i*NFRAMES_MAX + channels*NFRAMES_MAX;
-    }
-
-    /* allocate a common zerobuf */
-    zerobuf = (float*)calloc(NFRAMES_MAX, sizeof(float));
 
     /* Tell the JACK server that we are ready to roll.  Our
      * process() callback will start running now. */

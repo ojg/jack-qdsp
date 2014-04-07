@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include "dsp.h"
 
 extern int debuglevel;
@@ -76,6 +77,47 @@ void create_dsp(struct qdsp_t * dsp, char * subopts)
     dsp->next = NULL;
 
     if (errfnd) endprogram("Could not create dsp\n");
+}
+
+
+void init_dsp(struct qdsp_t * dsphead, unsigned int fs, unsigned int nchannels, unsigned int nframes)
+{
+    const float *zerobuf;
+    bool ping = false;
+    struct qdsp_t * dsp;
+    unsigned int i;
+
+    /* allocate tempbuf as one large buffer */
+    float ** tempbufA = (float**)malloc(nchannels*sizeof(float*));
+    float ** tempbufB = (float**)malloc(nchannels*sizeof(float*));
+    tempbufA[0] = (float*)malloc(2*nchannels*nframes*sizeof(float));
+    if (!tempbufA[0]) endprogram("Could not allocate memory for temporary buffer.\n");
+    tempbufB[0] = tempbufA[0] + nchannels*nframes;
+    for (i=0; i<nchannels; i++) {
+        tempbufA[i] = tempbufA[0] + i*nframes;
+        tempbufB[i] = tempbufB[0] + i*nframes;
+    }
+
+    /* allocate a common zerobuf */
+    zerobuf = (const float*)calloc(nframes, sizeof(float));
+
+    /* setup all static dsp list info */
+    dsp = dsphead;
+    while (dsp) {
+        dsp->fs = fs;
+        dsp->nchannels = nchannels;
+        dsp->zerobuf = zerobuf;
+
+        for (i=0; i<dsp->nchannels; i++) {
+            dsp->inbufs[i] = ping ? tempbufA[i] : tempbufB[i];
+            dsp->outbufs[i] = ping ? tempbufB[i] : tempbufA[i];
+        }
+
+        dsp->init(dsp);
+
+        dsp = dsp->next;
+        ping = !ping;
+    }
 }
 
 void endprogram(char * str)
