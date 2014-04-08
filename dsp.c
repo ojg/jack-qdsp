@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <string.h>
 #include "dsp.h"
 
 extern int debuglevel;
@@ -90,12 +91,13 @@ void init_dsp(struct qdsp_t * dsphead, unsigned int fs, unsigned int nchannels, 
     float * pongbuf;
 
     /* allocate tempbuf as one large buffer */
-    pingbuf = (float*)calloc((2*nchannels+1)*nframes, sizeof(float));
+    pingbuf = (float*)realloc(pingbuf, (2 * nchannels + 1) * nframes * sizeof(float));
     if (!pingbuf) endprogram("Could not allocate memory for temporary buffer.\n");
 
     /* allocate a common zerobuf */
     pongbuf = pingbuf + nchannels*nframes;
     zerobuf = pingbuf + 2*nchannels*nframes;
+    memset((float*)zerobuf, 0, nframes * sizeof(float));
 
     /* setup all static dsp list info */
     dsp = dsphead;

@@ -28,7 +28,7 @@ void gain_process(struct qdsp_t * dsp)
             dsp->outbufs[i][n] = state->gain * delayline[n];
             delayline[n] = dsp->inbufs[i][k];
         }
-        debugprint(3, "i=%p, o=%p, n=%d\t", dsp->inbufs[i], dsp->outbufs[i], n);
+        debugprint(3, "i=%p:%.2f, o=%p:%.2f, n=%d\t", dsp->inbufs[i], dsp->inbufs[i][n], dsp->outbufs[i], dsp->outbufs[i][n], n);
         for (k=0; n<dsp->nframes; n++, k++) {
             dsp->outbufs[i][n] = state->gain * dsp->inbufs[i][k];
         }
@@ -41,7 +41,8 @@ void gain_init(struct qdsp_t * dsp)
     struct qdsp_gain_state_t * state = (struct qdsp_gain_state_t *)dsp->state;
     state->delay_samples = state->delay_seconds * dsp->fs;
     debugprint(2, "%s: delay_samples=%d\n", __func__, state->delay_samples);
-    state->delayline = (float*)calloc(state->delay_samples * dsp->nchannels, sizeof(float));
+    state->delayline = (float*)realloc(state->delayline, state->delay_samples * dsp->nchannels * sizeof(float));
+    memset(state->delayline, 0, state->delay_samples * dsp->nchannels * sizeof(float));
 }
 
 int create_gain(struct qdsp_t * dsp, char ** subopts)
