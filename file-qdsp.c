@@ -274,7 +274,10 @@ int main (int argc, char *argv[])
     channels = input_sfinfo.channels;
     if (channels < 1 || channels > NCHANNELS_MAX) endprogram("Invalid number of channels specified\n");
 
-    init_dsp(dsphead, input_sfinfo.samplerate, channels, nframes);
+    dsphead->fs = input_sfinfo.samplerate;
+    dsphead->nchannels = channels;
+    dsphead->nframes = nframes;
+    init_dsp(dsphead);
 
     readbuf = (float*)malloc(nframes*channels*sizeof(float));
     writebuf = (float*)malloc(nframes*channels*sizeof(float));

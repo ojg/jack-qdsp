@@ -56,6 +56,20 @@ int process (jack_nframes_t nframes, void *arg)
     return 0;
 }
 
+
+/**
+ * JACK calls this callback if the server ever changes
+ * the buffer size.
+ */
+int bufferSizeCb(jack_nframes_t nframes, void *arg)
+{
+    struct qdsp_t * dsphead = (struct qdsp_t *)arg;
+    debugprint(0, "%s: Changing buffer size from %d to %d\n", __func__, dsphead->nframes, nframes);
+    dsphead->nframes = nframes;
+    init_dsp(dsphead);
+}
+
+
 /**
  * JACK calls this shutdown_callback if the server ever shuts down or
  * decides to disconnect the client.
@@ -204,6 +218,12 @@ int main (int argc, char *argv[])
 
     jack_set_process_callback (client, process, dsphead);
 
+    /* tell the JACK server to call `bufferSizeCb()' whenever
+       there is a change in buffer size
+    */
+
+    jack_set_buffer_size_callback (client, bufferSizeCb, dsphead);
+
     /* tell the JACK server to call `jack_shutdown()' if
        it ever shuts down, either entirely, or if it
        just decides to stop calling us.
@@ -216,7 +236,10 @@ int main (int argc, char *argv[])
     debugprint(0,  "Samplerate: %d\n", fs);
     debugprint(0,  "Channels: %d\n", channels);
 
-    init_dsp(dsphead, fs, channels, NFRAMES_MAX);
+    dsphead->fs = fs;
+    dsphead->nchannels = channels;
+    dsphead->nframes = NFRAMES_MAX;
+    init_dsp(dsphead);
 
     /* create ports */
     for (i=0; i<channels; i++) {
@@ -235,10 +258,12 @@ int main (int argc, char *argv[])
     /* Tell the JACK server that we are ready to roll.  Our
      * process() callback will start running now. */
 
+    debugprint(0,  "Activate\n");
     if (jack_activate (client)) {
         debugprint(0, "cannot activate client");
         exit (1);
     }
+
 
     /* Connect the ports.  You can't do this before the client is
      * activated, because we can't make connections to clients

@@ -81,7 +81,7 @@ void create_dsp(struct qdsp_t * dsp, char * subopts)
 }
 
 
-void init_dsp(struct qdsp_t * dsphead, unsigned int fs, unsigned int nchannels, unsigned int nframes)
+void init_dsp(struct qdsp_t * dsphead)
 {
     const float *zerobuf;
     bool ping = false;
@@ -89,6 +89,8 @@ void init_dsp(struct qdsp_t * dsphead, unsigned int fs, unsigned int nchannels, 
     unsigned int i;
     float * pingbuf;
     float * pongbuf;
+    unsigned int nframes = dsphead->nframes;
+    unsigned int nchannels = dsphead->nchannels;
 
     /* allocate tempbuf as one large buffer */
     pingbuf = (float*)realloc(pingbuf, (2 * nchannels + 1) * nframes * sizeof(float));
@@ -102,8 +104,9 @@ void init_dsp(struct qdsp_t * dsphead, unsigned int fs, unsigned int nchannels, 
     /* setup all static dsp list info */
     dsp = dsphead;
     while (dsp) {
-        dsp->fs = fs;
-        dsp->nchannels = nchannels;
+        dsp->fs = dsphead->fs;
+        dsp->nchannels = dsphead->nchannels;
+        dsp->nframes = dsphead->nframes;
         dsp->zerobuf = zerobuf;
 
         for (i=0; i<dsp->nchannels; i++) {

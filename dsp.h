@@ -27,7 +27,7 @@ struct dspfuncs_t {
 };
 
 void create_dsp(struct qdsp_t * dsp, char * subopts);
-void init_dsp(struct qdsp_t * dsphead, unsigned int fs, unsigned int nchannels, unsigned int nframes);
+void init_dsp(struct qdsp_t * dsphead);
 void endprogram(char * str);
 void debugprint(int level, const char * fmt, ...);
 
