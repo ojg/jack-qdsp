@@ -31,4 +31,29 @@ void init_dsp(struct qdsp_t * dsphead, unsigned int fs, unsigned int nchannels, 
 void endprogram(char * str);
 void debugprint(int level, const char * fmt, ...);
 
+#ifndef DEBUGLEVEL
+#define DEBUGLEVEL 0
+#endif
+#if DEBUGLEVEL >= 0
+#define DEBUG0(...) fprintf(stderr, __VA_ARGS__)
+#else
+#define DEBUG0(...)
+#endif
+#if DEBUGLEVEL >= 1
+#define DEBUG1(...) fprintf(stderr, __VA_ARGS__)
+#else
+#define DEBUG1(...)
+#endif
+#if DEBUGLEVEL >= 2
+#define DEBUG2(...) fprintf(stderr, __VA_ARGS__)
+#else
+#define DEBUG2(...)
+#endif
+#if DEBUGLEVEL >= 3
+#define DEBUG3(...) fprintf(stderr, __VA_ARGS__)
+#else
+#define DEBUG3(...)
+#endif
+
+
 #endif

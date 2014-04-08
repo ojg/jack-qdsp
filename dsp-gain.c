@@ -28,7 +28,7 @@ void gain_process(struct qdsp_t * dsp)
                 delayline[k] = dsp->inbufs[i][n];
                 if (++k == state->delay_samples) k=0;
             }
-            debugprint(3, "i=%p:%.2f, o=%p:%.2f, n=%d\t", dsp->inbufs[i], dsp->inbufs[i][n], dsp->outbufs[i], dsp->outbufs[i][n], n);
+            DEBUG3("i=%p:%.2f, o=%p:%.2f, n=%d\n", dsp->inbufs[i], dsp->inbufs[i][n], dsp->outbufs[i], dsp->outbufs[i][n], n);
         }
         state->offset = k;
     }
@@ -39,11 +39,11 @@ void gain_process(struct qdsp_t * dsp)
                 dsp->outbufs[i][n] = state->gain * delayline[n];
                 delayline[n] = dsp->inbufs[i][k];
             }
-            debugprint(3, "i=%p:%.2f, o=%p:%.2f, n=%d\t", dsp->inbufs[i], dsp->inbufs[i][n], dsp->outbufs[i], dsp->outbufs[i][n], n);
+            DEBUG3("i=%p:%.2f, o=%p:%.2f, n=%d\t", dsp->inbufs[i], dsp->inbufs[i][n], dsp->outbufs[i], dsp->outbufs[i][n], n);
             for (k=0; n<dsp->nframes; n++, k++) {
                 dsp->outbufs[i][n] = state->gain * dsp->inbufs[i][k];
             }
-            debugprint(3, "k=%d\n", k);
+            DEBUG3("k=%d\n", k);
         }
     }
 }

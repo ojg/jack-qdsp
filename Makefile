@@ -21,7 +21,7 @@ $(EXECUTABLE_FILE): $(OBJECTS_FILE)
 	$(CC) $(OBJECTS_FILE) -o $@ $(LDFLAGS_FILE)
 
 %.o: %.c $(DEPS) 
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $(DEFINES) $< -o $@
 
 install:	all
 	sudo install -Dm 755 $(EXECUTABLE_JACK) $(DESTDIR)$(PREFIX)/bin/$(EXECUTABLE_JACK)

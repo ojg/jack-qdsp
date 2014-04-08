@@ -44,7 +44,7 @@ void gate_process(struct qdsp_t * dsp)
                 outbuf[n] = gain * inbuf[n];
                 gain -= gainstep;
             }
-//            fprintf(stderr,"%s: attack\n", __func__);
+            DEBUG3("%s: attack\n", __func__);
         }
         else if (state->holdcount[i] > holdthresh && max > state->threshold) {
             // release
@@ -56,7 +56,7 @@ void gate_process(struct qdsp_t * dsp)
                 outbuf[n] = gain * inbuf[n];
                 gain += gainstep;
             }
-//            fprintf(stderr,"%s: release\n", __func__);
+            DEBUG3("%s: release\n", __func__);
         }
         else { //dsp->holdcount > holdthresh && max < dsp->threshold
             // closed
@@ -65,8 +65,9 @@ void gate_process(struct qdsp_t * dsp)
             //dsp->outbufs[i] = dsp->zerobuf;
         }
 
-//        if (dsp->sequencecount % (dsp->fs/dsp->nframes) == 0)
-//            fprintf(stderr,"%s: max: %.2f, holdthresh: %d, count: %d\n", __func__, 20*log10f(max), holdthresh, state->holdcount[i]);
+        if (dsp->sequencecount % (dsp->fs/dsp->nframes) == 0) {
+            DEBUG3("%s: max: %.2f, holdthresh: %d, count: %d\n", __func__, 20*log10f(max), holdthresh, state->holdcount[i]);
+        }
 
         if (max > state->threshold)
             state->holdcount[i] = 0;
