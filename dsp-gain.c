@@ -11,6 +11,7 @@ struct qdsp_gain_state_t {
     float delay_seconds;
     unsigned int delay_samples;
     float * delayline;
+    unsigned int offset;
 };
 
 void gain_process(struct qdsp_t * dsp)
@@ -19,20 +20,31 @@ void gain_process(struct qdsp_t * dsp)
     unsigned int i, k=0, n=0;
 
     if (state->delay_samples > dsp->nframes) {
-        endprogram("gain_process: Error: Delay is longer than framesize\n");
+        for (i=0; i<dsp->nchannels; i++) {
+            float * restrict delayline = &state->delayline[state->delay_samples * i];
+            k = state->offset;
+            for (n=0; n<dsp->nframes; n++) {
+                dsp->outbufs[i][n] = state->gain * delayline[k];
+                delayline[k] = dsp->inbufs[i][n];
+                if (++k == state->delay_samples) k=0;
+            }
+            debugprint(3, "i=%p:%.2f, o=%p:%.2f, n=%d\t", dsp->inbufs[i], dsp->inbufs[i][n], dsp->outbufs[i], dsp->outbufs[i][n], n);
+        }
+        state->offset = k;
     }
-
-    for (i=0; i<dsp->nchannels; i++) {
-        float * restrict delayline = &state->delayline[state->delay_samples * i];
-        for (n=0, k=dsp->nframes - state->delay_samples; n<state->delay_samples; n++, k++) {
-            dsp->outbufs[i][n] = state->gain * delayline[n];
-            delayline[n] = dsp->inbufs[i][k];
+    else {
+        for (i=0; i<dsp->nchannels; i++) {
+            float * restrict delayline = &state->delayline[state->delay_samples * i];
+            for (n=0, k=dsp->nframes - state->delay_samples; n<state->delay_samples; n++, k++) {
+                dsp->outbufs[i][n] = state->gain * delayline[n];
+                delayline[n] = dsp->inbufs[i][k];
+            }
+            debugprint(3, "i=%p:%.2f, o=%p:%.2f, n=%d\t", dsp->inbufs[i], dsp->inbufs[i][n], dsp->outbufs[i], dsp->outbufs[i][n], n);
+            for (k=0; n<dsp->nframes; n++, k++) {
+                dsp->outbufs[i][n] = state->gain * dsp->inbufs[i][k];
+            }
+            debugprint(3, "k=%d\n", k);
         }
-        debugprint(3, "i=%p:%.2f, o=%p:%.2f, n=%d\t", dsp->inbufs[i], dsp->inbufs[i][n], dsp->outbufs[i], dsp->outbufs[i][n], n);
-        for (k=0; n<dsp->nframes; n++, k++) {
-            dsp->outbufs[i][n] = state->gain * dsp->inbufs[i][k];
-        }
-        debugprint(3, "k=%d\n", k);
     }
 }
 
@@ -65,6 +77,7 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
     // default values
     state->delay_seconds = 0;
     state->gain = 1.0f;
+    state->offset = 0;
 
     debugprint(1, "%s subopts: %s\n", __func__, *subopts);
     while (**subopts != '\0' && !errfnd) {
