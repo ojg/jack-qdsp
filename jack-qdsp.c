@@ -196,9 +196,10 @@ int main (int argc, char *argv[])
 
     /* open a client connection to the JACK server */
     debugprint(0, "Connecting to jack server: %s\n", server_name ? server_name : "default");
+    if (server_name) options |= JackServerName;
     client = jack_client_open (client_name, options, &status, server_name);
     if (client == NULL) {
-        debugprint(0,  "jack_client_open() failed, status = 0x%2.0x\n", status);
+        debugprint(0,  "jack_client_open() failed, status = 0x%x\n", status);
         if (status & JackServerFailed) {
             debugprint(0,  "Unable to connect to JACK server\n");
         }
