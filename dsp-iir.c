@@ -105,17 +105,27 @@ int calc_coeffs(struct qdsp_iir_state_t * state, int fs)
         a2 =   1 - alpha;
         break;
     case LWT_OPT:
-        q0 = state->q0;
-        q1 = state->q1;
-        w1 = 2.0*M_PI*state->f1/fs;
-        cosw0 = cos(0.95); //fixme: 0.95 found empirically
-        sinw0 = sin(0.95);
-        b0 = 1 + cosw0 + sinw0*w0/q0 + (1-cosw0)*w0*w0;
-        b1 = -2 - 2*cosw0 + (2-2*cosw0)*w0*w0;
-        b2 = 1 + cosw0 - sinw0*w0/q0 + (1-cosw0)*w0*w0;
-        a0 = 1 + cosw0 + sinw0*w1/q1 + (1-cosw0)*w1*w1;
-        a1 = -2 - 2*cosw0 + (2-2*cosw0)*w1*w1;
-        a2 = 1 + cosw0 - sinw0*w1/q1 + (1-cosw0)*w1*w1;
+        // Center frequency at which we get a perfect match
+        fm = sqrt(fc * f0);
+
+        // Bilinear transform constant
+        t = tan((M_PI / 2) * (fm / FS)) / (M_PI * fm);
+
+        // Helper variables to clean up expressions
+        Atgt = 2 * M_PI * fc * t;
+        Atgt_2 = Atgt * Atgt;
+        Adut = 2 * M_PI * f0 * t;
+        Adut_2 = Adut * Adut;
+
+        // Current highpass response of DUT
+        b0 = (1 + Adut / Q0 + Adut_2);
+        b1 = (2 * Adut_2 - 2);
+        b2 = (1 - Adut / Q0 + Adut_2);
+
+        // Target highpass response for EQ'ed DUT
+        a0 = 1 + Atgt / Q + Atgt_2;
+        a1 = 2 * Atgt_2 - 2;
+        a2 = 1 - Atgt / Q + Atgt_2;
         break;
     default:
         return 1;
