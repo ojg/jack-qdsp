@@ -52,6 +52,7 @@ int calc_coeffs(struct qdsp_iir_state_t * state, int fs)
     double alpha = sinw0/(2.0*state->q0);
     double b0,b1,b2,a0,a1,a2;
     double q0,q1,w1;
+    double fm,t,Atgt,Atgt_2,Adut,Adut_2;
     debugprint(1, "%s iir type is %d\n", __func__, state->type);
     debugprint(1, "%s fs=%d, w0=%.3f, alpha=%.3f, cosw0=%.3f\n", __func__, fs, w0, alpha, cosw0);
 
@@ -106,26 +107,26 @@ int calc_coeffs(struct qdsp_iir_state_t * state, int fs)
         break;
     case LWT_OPT:
         // Center frequency at which we get a perfect match
-        fm = sqrt(fc * f0);
+        fm = sqrt(state->f1 * state->f0);
 
         // Bilinear transform constant
-        t = tan((M_PI / 2) * (fm / FS)) / (M_PI * fm);
+        t = tan((M_PI / 2) * (fm / fs)) / (M_PI * fm);
 
         // Helper variables to clean up expressions
-        Atgt = 2 * M_PI * fc * t;
+        Atgt = 2 * M_PI * state->f1 * t;
         Atgt_2 = Atgt * Atgt;
-        Adut = 2 * M_PI * f0 * t;
+        Adut = 2 * M_PI * state->f0 * t;
         Adut_2 = Adut * Adut;
 
         // Current highpass response of DUT
-        b0 = (1 + Adut / Q0 + Adut_2);
+        b0 = (1 + Adut / state->q0 + Adut_2);
         b1 = (2 * Adut_2 - 2);
-        b2 = (1 - Adut / Q0 + Adut_2);
+        b2 = (1 - Adut / state->q0 + Adut_2);
 
         // Target highpass response for EQ'ed DUT
-        a0 = 1 + Atgt / Q + Atgt_2;
+        a0 = 1 + Atgt / state->q1 + Atgt_2;
         a1 = 2 * Atgt_2 - 2;
-        a2 = 1 - Atgt / Q + Atgt_2;
+        a2 = 1 - Atgt / state->q1 + Atgt_2;
         break;
     default:
         return 1;
