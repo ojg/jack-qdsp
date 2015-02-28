@@ -9,7 +9,7 @@
 
 struct qdsp_t {
     struct qdsp_t *next;
-    float * restrict inbufs[NCHANNELS_MAX];
+    const float * restrict inbufs[NCHANNELS_MAX];
     float * restrict outbufs[NCHANNELS_MAX];
     const float * restrict zerobuf;
     unsigned int fs;

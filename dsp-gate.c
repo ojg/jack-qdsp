@@ -21,7 +21,7 @@ void gate_process(struct qdsp_t * dsp)
 
     for (i=0; i<dsp->nchannels; i++) {
         float max = 0;
-        float * inbuf = dsp->inbufs[i];
+        const float * inbuf = dsp->inbufs[i];
         for (n=0; n<dsp->nframes; n++) {
             if (max < fabsf(inbuf[n]))
                 max = fabsf(inbuf[n]);
@@ -37,7 +37,7 @@ void gate_process(struct qdsp_t * dsp)
         else if (state->holdcount[i] == holdthresh) {
             // attack
             float gainstep = 1.0f / dsp->nframes;
-            float * inbuf = dsp->inbufs[i];
+            const float * inbuf = dsp->inbufs[i];
             float * outbuf = dsp->outbufs[i];
             float gain = 1.0f;
             for (n=0; n<dsp->nframes; n++) {
@@ -49,7 +49,7 @@ void gate_process(struct qdsp_t * dsp)
         else if (state->holdcount[i] > holdthresh && max > state->threshold) {
             // release
             float gainstep = 1.0f / dsp->nframes;
-            float * inbuf = dsp->inbufs[i];
+            const float * inbuf = dsp->inbufs[i];
             float * outbuf = dsp->outbufs[i];
             float gain = 0;
             for (n=0; n<dsp->nframes; n++) {

@@ -180,7 +180,7 @@ void iir_process(struct qdsp_t * dsp)
 #endif
     default:
     {
-        float *inbuf;
+        const float *inbuf;
         float *outbuf;
         iirfp x,y,s1,s2;
         iirfp a1 = state->coeffs.a1;

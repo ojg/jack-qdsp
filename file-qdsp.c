@@ -291,7 +291,7 @@ int main (int argc, char *argv[])
         }
         totframes += nframes;
         debugprint(3, "inbufs=%p\n", dsp->inbufs[0]);
-        deinterleave(dsphead->inbufs[0], readbuf, channels, nframes);
+        deinterleave((float*)dsphead->inbufs[0], readbuf, channels, nframes);
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t);
         dsp = process(nframes, dsphead);
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t2); t = timespecsub(t,t2); ttot = timespecadd(t,ttot);
