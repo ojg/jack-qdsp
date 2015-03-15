@@ -9,6 +9,7 @@
 #include <sndfile.h>
 #include <stdbool.h>
 #include <time.h>
+#include <fenv.h>
 #include "dsp.h"
 
 int debuglevel;
@@ -285,15 +286,19 @@ int main (int argc, char *argv[])
     ttot.tv_sec=0;
     ttot.tv_nsec=0;
     while ((nframesread = sf_readf_float(input_file, readbuf, nframes))) {
+        int raised;
         if (nframesread < nframes) {
             memset(readbuf + (nframesread * channels), 0, (nframes-nframesread) * channels * sizeof(float));
         }
         totframes += nframes;
         debugprint(3, "inbufs=%p\n", dsp->inbufs[0]);
         deinterleave((float*)dsphead->inbufs[0], readbuf, channels, nframes);
+        feclearexcept(FE_ALL_EXCEPT);
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t);
         dsp = process(nframes, dsphead);
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t2); t = timespecsub(t,t2); ttot = timespecadd(t,ttot);
+        raised = fetestexcept(FE_INEXACT | FE_DIVBYZERO | FE_UNDERFLOW | FE_OVERFLOW | FE_INVALID);
+        if (raised) debugprint(3, "FE exception rasied: %d\n", raised);
         debugprint(3, "outbufs=%p\n", dsp->outbufs[0]);
         interleave(writebuf, dsp->outbufs[0], channels, nframes);
         if (nframesread != sf_writef_float(output_file, writebuf, nframesread))
