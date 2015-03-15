@@ -38,7 +38,6 @@ int create_clip(struct qdsp_t * dsp, char ** subopts)
         NULL
     };
     char *value;
-    char *name = NULL;
     int errfnd = 0;
     struct qdsp_clip_state_t * state = malloc(sizeof(struct qdsp_clip_state_t));
     dsp->state = (void*)state;

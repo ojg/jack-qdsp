@@ -67,6 +67,7 @@ int bufferSizeCb(jack_nframes_t nframes, void *arg)
     debugprint(0, "%s: Changing buffer size from %d to %d\n", __func__, dsphead->nframes, nframes);
     dsphead->nframes = nframes;
     init_dsp(dsphead);
+    return 0;
 }
 
 
@@ -118,9 +119,9 @@ int main (int argc, char *argv[])
     jack_options_t options = JackNullOption;
     jack_status_t status;
     struct qdsp_t *dsphead = NULL;
-    struct qdsp_t *dsp;
+    struct qdsp_t *dsp = NULL;
     unsigned int fs;
-    unsigned int channels;
+    unsigned int channels = 1;
     int i,c,itmp;
 
     debuglevel = 0;
@@ -154,12 +155,12 @@ int main (int argc, char *argv[])
             break;
         case 'p':
             if (!dsphead) {
-                dsphead = (struct qdsp_t*)malloc(sizeof(struct qdsp_t));
+                dsphead = malloc(sizeof(struct qdsp_t));
                 if (!dsphead) endprogram("Could not allocate memory for dsp.\n");
                 dsp = dsphead;
             }
             else {
-                dsp->next = (struct qdsp_t*)malloc(sizeof(struct qdsp_t));
+                dsp->next = malloc(sizeof(struct qdsp_t));
                 if (!dsp->next) endprogram("Could not allocate memory for dsp.\n");
                 dsp = dsp->next;
             }

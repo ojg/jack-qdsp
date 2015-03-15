@@ -51,7 +51,6 @@ int calc_coeffs(struct qdsp_iir_state_t * state, int fs)
     double sinw0 = sin(w0);
     double alpha = sinw0/(2.0*state->q0);
     double b0,b1,b2,a0,a1,a2;
-    double q0,q1,w1;
     double fm,t,Atgt,Atgt_2,Adut,Adut_2;
     debugprint(1, "%s iir type is %d\n", __func__, state->type);
     debugprint(1, "%s fs=%d, w0=%.3f, alpha=%.3f, cosw0=%.3f\n", __func__, fs, w0, alpha, cosw0);
@@ -278,7 +277,6 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
     };
 
     char *value;
-    char *name = NULL;
     int errfnd = 0, i;
     struct qdsp_iir_state_t * state = malloc(sizeof(struct qdsp_iir_state_t));
     long long curparammask = 0;
