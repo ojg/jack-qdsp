@@ -92,7 +92,6 @@ int create_gate(struct qdsp_t * dsp, char ** subopts)
         NULL
     };
     char *value;
-    char *name = NULL;
     int errfnd = 0;
     struct qdsp_gate_state_t * state = malloc(sizeof(struct qdsp_gate_state_t));
     dsp->state = (void*)state;

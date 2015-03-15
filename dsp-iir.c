@@ -267,7 +267,6 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
     };
 
     char *value;
-    char *name = NULL;
     int errfnd = 0, i;
     struct qdsp_iir_state_t * state = malloc(sizeof(struct qdsp_iir_state_t));
     long long curparammask = 0;

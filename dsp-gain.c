@@ -69,7 +69,6 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
         NULL
     };
     char *value;
-    char *name = NULL;
     int errfnd = 0;
     struct qdsp_gain_state_t * state = malloc(sizeof(struct qdsp_gain_state_t));
     dsp->state = (void*)state;
