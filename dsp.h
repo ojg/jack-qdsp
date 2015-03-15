@@ -13,8 +13,8 @@ struct qdsp_t {
     float * restrict outbufs[NCHANNELS_MAX];
     const float * restrict zerobuf;
     unsigned int fs;
-    unsigned int nchannels;
-    unsigned int nframes;
+    int nchannels;
+    int nframes;
     unsigned int sequencecount;
     void *state;
     void (*process)(struct qdsp_t *);
@@ -23,7 +23,7 @@ struct qdsp_t {
 
 struct dspfuncs_t {
         void (*helpfunc)(void);
-        int (*createfunc)(struct qdsp_t * dsp, char ** subopts);
+        int (*createfunc)(struct qdsp_t *, char **);
 };
 
 void create_dsp(struct qdsp_t * dsp, char * subopts);

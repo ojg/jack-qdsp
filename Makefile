@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-O2 -march=native -std=c99 -Wall
+CFLAGS=-O2 -march=native -std=c99 -Wall -Wextra
 LDFLAGS_JACK=-ljack -lm
 LDFLAGS_FILE=-lsndfile -lrt -lm
 SOURCES_COMMON=dsp.c dsp-gate.c dsp-gain.c dsp-iir.c dsp-clip.c

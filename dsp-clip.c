@@ -26,7 +26,9 @@ void clip_process(struct qdsp_t * dsp)
 }
 
 void clip_init(struct qdsp_t * dsp)
-{}
+{
+	(void)dsp;
+}
 
 int create_clip(struct qdsp_t * dsp, char ** subopts)
 {
