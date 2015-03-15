@@ -178,7 +178,7 @@ int main (int argc, char *argv[])
     struct qdsp_t *dsphead = NULL;
     struct qdsp_t *dsp = NULL;
     float *readbuf, *writebuf;
-    unsigned int nframes=0, totframes=0, nframesread=0;
+    unsigned int nframes=1024, totframes=0, nframesread=0;
     bool israwinput = false;
     struct timespec t,t2,ttot,res;
     int i,c,itmp;
@@ -234,7 +234,7 @@ int main (int argc, char *argv[])
                     debuglevel = itmp;
             }
             else
-                debuglevel = 1;
+                debuglevel = 0;
             break;
         case 'h':
         case '?':
@@ -284,7 +284,7 @@ int main (int argc, char *argv[])
     /* Run processing until EOF */
     ttot.tv_sec=0;
     ttot.tv_nsec=0;
-    while (nframesread == sf_readf_float(input_file, readbuf, nframes)) {
+    while ((nframesread = sf_readf_float(input_file, readbuf, nframes))) {
         if (nframesread < nframes) {
             memset(readbuf + (nframesread * channels), 0, (nframes-nframesread) * channels * sizeof(float));
         }
