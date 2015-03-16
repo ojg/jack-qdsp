@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <string.h>
+#include <float.h>
 #include "dsp.h"
 
 extern int debuglevel;
@@ -90,7 +91,8 @@ void init_dsp(struct qdsp_t * dsphead)
     /* allocate a common zerobuf */
     pongbuf = pingbuf + nchannels*nframes;
     zerobuf = pingbuf + 2*nchannels*nframes;
-    memset(zerobuf, 0, nframes * sizeof(float));
+    for (i=0; i<nframes; i++)
+        zerobuf[i] = FLT_EPSILON;
 
     /* setup all static dsp list info */
     dsp = dsphead;
