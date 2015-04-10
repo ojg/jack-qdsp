@@ -111,8 +111,15 @@ void sig_handler(int signo)
     }
 }
 
+#ifdef INPROCESS
+int jack_initialize (jack_client_t *client, const char *load_init)
+{
+	int argc = 1;
+	char **argv;
+#else
 int main (int argc, char *argv[])
 {
+#endif
     const char *client_name = "jack-qdsp";
     char *server_name = NULL;
     char *input_ports = NULL;
@@ -311,3 +318,9 @@ int main (int argc, char *argv[])
     jack_client_close (client);
     exit (0);
 }
+
+#ifdef INPROCESS
+void jack_finish(void * arg)
+{
+}
+#endif
