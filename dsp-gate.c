@@ -111,7 +111,7 @@ int create_gate(struct qdsp_t * dsp, char ** subopts)
                 continue;
             }
             state->threshold = powf(10,atof(value)/20);
-            debugprint(0, "%s: threshold=%f\n", __func__, atof(value));
+            debugprint(1, "%s: threshold=%f\n", __func__, atof(value));
             break;
         case HOLDTIME_OPT:
             if (value == NULL) {
@@ -120,7 +120,7 @@ int create_gate(struct qdsp_t * dsp, char ** subopts)
                 continue;
             }
             state->hold = atoi(value);
-            debugprint(0, "%s: holdtime=%d\n", __func__, atoi(value));
+            debugprint(1, "%s: holdtime=%d\n", __func__, atoi(value));
             break;
         default:
             debugprint(0, "%s: No match found for token: /%s/\n", __func__, value);

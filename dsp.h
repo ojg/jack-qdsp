@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#define NFRAMES_MAX 8192
 #define NCHANNELS_MAX 8
 
 struct qdsp_t {

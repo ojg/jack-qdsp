@@ -64,9 +64,11 @@ int process (jack_nframes_t nframes, void *arg)
 int bufferSizeCb(jack_nframes_t nframes, void *arg)
 {
     struct qdsp_t * dsphead = (struct qdsp_t *)arg;
-    debugprint(0, "%s: Changing buffer size from %d to %d\n", __func__, dsphead->nframes, nframes);
-    dsphead->nframes = nframes;
-    init_dsp(dsphead);
+    if ((int)nframes != dsphead->nframes) {
+        debugprint(0, "%s: Changing buffer size from %d to %d\n", __func__, dsphead->nframes, nframes);
+        dsphead->nframes = nframes;
+        init_dsp(dsphead);
+    }
     return 0;
 }
 
@@ -128,7 +130,6 @@ int main (int argc, char *argv[])
     jack_status_t status;
     struct qdsp_t *dsphead = NULL;
     struct qdsp_t *dsp = NULL;
-    int fs;
     int channels = 0;
     int i,c,itmp;
 
@@ -242,13 +243,10 @@ int main (int argc, char *argv[])
     jack_on_shutdown (client, jack_shutdown, 0);
 
     /* get the current sample rate. */
-    fs = jack_get_sample_rate (client);
-    debugprint(0,  "Samplerate: %d\n", fs);
-    debugprint(0,  "Channels: %d\n", channels);
-
-    dsphead->fs = fs;
     dsphead->nchannels = channels;
-    dsphead->nframes = NFRAMES_MAX;
+    dsphead->fs = jack_get_sample_rate (client);
+    dsphead->nframes = jack_get_buffer_size (client);
+
     init_dsp(dsphead);
 
     /* create ports */
@@ -268,7 +266,7 @@ int main (int argc, char *argv[])
     /* Tell the JACK server that we are ready to roll.  Our
      * process() callback will start running now. */
 
-    debugprint(0,  "Activate\n");
+    debugprint(0,  "Activate: Samplerate: %d, Channels: %d, Buffersize: %d\n", dsphead->fs, channels, dsphead->nframes);
     if (jack_activate (client)) {
         debugprint(0, "cannot activate client");
         exit (1);
