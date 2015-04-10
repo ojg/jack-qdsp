@@ -297,8 +297,8 @@ int main (int argc, char *argv[])
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t);
         dsp = process(nframes, dsphead);
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t2); t = timespecsub(t,t2); ttot = timespecadd(t,ttot);
-        raised = fetestexcept(FE_INEXACT | FE_DIVBYZERO | FE_UNDERFLOW | FE_OVERFLOW | FE_INVALID);
-        if (raised) debugprint(3, "FE exception raised: 0x%02X\n", raised);
+        raised = fetestexcept(FE_DIVBYZERO | FE_UNDERFLOW | FE_OVERFLOW | FE_INVALID);
+        if (raised) debugprint(2, "FE exception raised: 0x%02X\n", raised);
         debugprint(3, "outbufs=%p\n", dsp->outbufs[0]);
         interleave(writebuf, dsp->outbufs[0], channels, nframes);
         if (nframesread != sf_writef_float(output_file, writebuf, nframesread))
