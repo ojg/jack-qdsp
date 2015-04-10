@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <float.h>
+#include <errno.h>
 #include "dsp.h"
 
 extern int debuglevel;
@@ -85,8 +86,7 @@ void init_dsp(struct qdsp_t * dsphead)
 
     /* allocate tempbuf as one large buffer */
     pingbuf = realloc(pingbuf, (2 * nchannels + 1) * nframes * sizeof(float));
-    if (!pingbuf) endprogram("Could not allocate memory for temporary buffer.\n");
-    /* Todo: Does realloc return NULL on fail? */
+    if (errno == ENOMEM) endprogram("Could not allocate memory for temporary buffer.\n");
 
     /* allocate a common zerobuf */
     pongbuf = pingbuf + nchannels*nframes;
