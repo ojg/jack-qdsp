@@ -307,19 +307,23 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
         }
 
         switch (curtoken) {
+        case LP1_OPT:
+        case HP1_OPT:
+        case LS1_OPT:
+        case HS1_OPT:
+        case AP1_OPT:
+            state->type = curtoken;
+            debugprint(0, "%s iir type %s is not yet implemented\n", __func__, token[curtoken]);
+            errfnd = 1;
+            break;
         case DIRECT_OPT:
         case LP2_OPT:
         case HP2_OPT:
         case LS2_OPT:
         case HS2_OPT:
-        case LP1_OPT:
-        case HP1_OPT:
-        case LS1_OPT:
-        case HS1_OPT:
         case PEQ_OPT:
         case LWT_OPT:
         case AP2_OPT:
-        case AP1_OPT:
             state->type = curtoken;
             debugprint(1, "%s iir type is %s\n", __func__, token[curtoken]);
             break;
