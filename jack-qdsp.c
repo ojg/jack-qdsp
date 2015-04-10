@@ -250,7 +250,7 @@ int main (int argc, char *argv[])
     }
 
     /* Activate, process() will be called from now on */
-    debugprint(0,  "Activate: Samplerate: %d, Channels: %d, Buffersize: %d\n", dsphead->fs, channels, dsphead->nframes);
+    debugprint(0,  "Activate %s: Samplerate: %d, Channels: %d, Buffersize: %d\n", client_name, dsphead->fs, channels, dsphead->nframes);
     if (jack_activate (client)) {
         debugprint(0, "cannot activate client");
         exit (1);
