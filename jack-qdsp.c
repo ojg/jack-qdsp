@@ -181,13 +181,11 @@ int main (int argc, char *argv[])
             if (optarg) {
                 itmp = atoi(optarg);
                 debugprint(0, "%s: verbosity=%d\n",__func__, itmp);
-                if (itmp<0)
-                    debuglevel = 0;
-                else
+                if (itmp > 0)
                     debuglevel = itmp;
             }
             else
-                debuglevel = 0;
+                debuglevel++;
             break;
         case 'h':
         case '?':
