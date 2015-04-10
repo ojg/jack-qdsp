@@ -24,7 +24,6 @@ int process (jack_nframes_t nframes, void *arg)
 {
     struct qdsp_t * dsphead = (struct qdsp_t *)arg;
     struct qdsp_t * dsp = dsphead;
-    bool ping = false;
 
     if (dsp) {
         for (int i=0; i<dsp->nchannels; i++)
@@ -50,7 +49,6 @@ int process (jack_nframes_t nframes, void *arg)
         dsp->sequencecount++;
         dsp->process((void*)dsp);
         dsp = dsp->next;
-        ping = !ping;
     }
 
     return 0;
