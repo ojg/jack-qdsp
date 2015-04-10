@@ -321,7 +321,7 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
         case AP2_OPT:
         case AP1_OPT:
             state->type = curtoken;
-            debugprint(0, "%s iir type is %s\n", __func__, token[curtoken]);
+            debugprint(1, "%s iir type is %s\n", __func__, token[curtoken]);
             break;
         case F0_OPT:
             state->f0 = strtod(value, NULL);
