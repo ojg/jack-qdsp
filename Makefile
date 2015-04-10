@@ -11,27 +11,28 @@ OBJECTS_JACK=$(patsubst %.c, $(OBJECTS_DIR)/%.o, $(SOURCES_JACK))
 OBJECTS_FILE=$(patsubst %.c, $(OBJECTS_DIR)/%.o, $(SOURCES_FILE))
 EXECUTABLE_JACK=jack-qdsp
 EXECUTABLE_FILE=file-qdsp
-PREFIX=/usr/local
+INSTALLDIR=/usr/local/bin
 
+.PHONY: all
+all: $(OBJECTS_DIR) $(EXECUTABLE_JACK) $(EXECUTABLE_FILE)
 
-all: $(SOURCES_JACK) $(EXECUTABLE_JACK) $(SOURCES_FILE) $(EXECUTABLE_FILE)
-   
+$(OBJECTS_DIR) :
+	mkdir -p $(OBJECTS_DIR)
+
 $(EXECUTABLE_JACK): $(OBJECTS_JACK)
 	$(CC) $(OBJECTS_JACK) -o $@ $(LDFLAGS_JACK)
 
 $(EXECUTABLE_FILE): $(OBJECTS_FILE)
 	$(CC) $(OBJECTS_FILE) -o $@ $(LDFLAGS_FILE)
 
-$(OBJECTS_DIR)/%.o: %.c $(DEPS) $(OBJECTS_DIR)
-	$(CC) $(CFLAGS) -c $(DEFINES) -o $@ $<
-	
-$(OBJECTS_DIR) : 
-	mkdir $(OBJECTS_DIR)
+$(OBJECTS_DIR)/%.o: %.c $(DEPS)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 install:	all
-	sudo install -Dm 755 $(EXECUTABLE_JACK) $(DESTDIR)$(PREFIX)/bin/$(EXECUTABLE_JACK)
-	sudo install -Dm 755 $(EXECUTABLE_FILE) $(DESTDIR)$(PREFIX)/bin/$(EXECUTABLE_FILE)
+	sudo install -Dm 755 $(EXECUTABLE_JACK) $(INSTALLDIR)/$(EXECUTABLE_JACK)
+	sudo install -Dm 755 $(EXECUTABLE_FILE) $(INSTALLDIR)/$(EXECUTABLE_FILE)
     
+.PHONY: clean
 clean: 
 	rm -rf $(OBJECTS_JACK) $(EXECUTABLE_JACK)
 	rm -rf $(OBJECTS_FILE) $(EXECUTABLE_FILE)
