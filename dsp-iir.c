@@ -45,7 +45,8 @@ typedef double v2df __attribute__ ((vector_size (16)));
 int calc_coeffs(struct qdsp_iir_state_t * state, int fs)
 {
     /* Based on RBJ Cookbook Formulae */
-    double A = sqrt(pow(10.0,state->gain/20.0));
+    double gain = pow(10.0,state->gain/20.0);
+    double A = sqrt(gain);
     double w0 = 2.0*M_PI*state->f0/fs;
     double cosw0 = cos(w0);
     double sinw0 = sin(w0);
@@ -57,17 +58,17 @@ int calc_coeffs(struct qdsp_iir_state_t * state, int fs)
 
     switch (state->type) {
     case LP2_OPT:
-        b0 =  (1 - cosw0)/2 * state->gain;
-        b1 =  (1 - cosw0) * state->gain;
-        b2 =  (1 - cosw0)/2 * state->gain;
+        b0 =  (1 - cosw0)/2 * gain;
+        b1 =  (1 - cosw0) * gain;
+        b2 =  (1 - cosw0)/2 * gain;
         a0 =   1 + alpha;
         a1 =  -2*cosw0;
         a2 =   1 - alpha;
         break;
     case HP2_OPT:
-        b0 =  (1 + cosw0)/2 * state->gain;
-        b1 = -(1 + cosw0) * state->gain;
-        b2 =  (1 + cosw0)/2 * state->gain;
+        b0 =  (1 + cosw0)/2 * gain;
+        b1 = -(1 + cosw0) * gain;
+        b2 =  (1 + cosw0)/2 * gain;
         a0 =   1 + alpha;
         a1 =  -2*cosw0;
         a2 =   1 - alpha;
@@ -97,9 +98,9 @@ int calc_coeffs(struct qdsp_iir_state_t * state, int fs)
         a2 =   1 - alpha/A;
         break;
     case AP2_OPT:
-        b0 =   (1 - alpha) * state->gain;;
-        b1 =  -2*cosw0 * state->gain;;
-        b2 =   (1 + alpha) * state->gain;;
+        b0 =   (1 - alpha) * gain;
+        b1 =  -2*cosw0 * gain;
+        b2 =   (1 + alpha) * gain;
         a0 =   1 + alpha;
         a1 =  -2*cosw0;
         a2 =   1 - alpha;

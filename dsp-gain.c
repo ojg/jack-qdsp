@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "dsp.h"
 
 
@@ -61,10 +62,12 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
 {
     enum {
         GAIN_OPT = 0,
+        GAIN_LIN_OPT,
         DELAY_OPT,
     };
     char *const token[] = {
         [GAIN_OPT]   = "g",
+        [GAIN_LIN_OPT]   = "gl",
         [DELAY_OPT]  = "d",
         NULL
     };
@@ -82,6 +85,15 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
     while (**subopts != '\0' && !errfnd) {
         switch (getsubopt(subopts, token, &value)) {
         case GAIN_OPT:
+            if (value == NULL) {
+                debugprint(0, "%s: Missing value for suboption '%s'\n", __func__, token[GAIN_OPT]);
+                errfnd = 1;
+                continue;
+            }
+            state->gain = powf(10, atof(value) / 20.0f);
+            debugprint(1, "%s: gain=%f\n", __func__, atof(value));
+            break;
+        case GAIN_LIN_OPT:
             if (value == NULL) {
                 debugprint(0, "%s: Missing value for suboption '%s'\n", __func__, token[GAIN_OPT]);
                 errfnd = 1;
