@@ -2,6 +2,7 @@
 #include <getopt.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <math.h>
 #include "dsp.h"
 
 
@@ -54,7 +55,7 @@ int create_clip(struct qdsp_t * dsp, char ** subopts)
                 errfnd = 1;
                 continue;
             }
-            state->threshold = atof(value);
+            state->threshold = powf(10.0f, atof(value) / 20.0f);
             debugprint(1,"%s: threshold=%f\n", __func__, atof(value));
             break;
         default:
@@ -72,6 +73,6 @@ int create_clip(struct qdsp_t * dsp, char ** subopts)
 void help_clip(void)
 {
     debugprint(0,"  Clip options\n");
-    debugprint(0,"    Name: clip\n    t=clip threshold (linear)\n");
-    debugprint(0,"    Example: -p clip,t=1.0\n");
+    debugprint(0,"    Name: clip\n    t=clip threshold (dBFS)\n");
+    debugprint(0,"    Example: -p clip,t=-4\n");
 }

@@ -90,7 +90,7 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
                 errfnd = 1;
                 continue;
             }
-            state->gain = powf(10, atof(value) / 20.0f);
+            state->gain = powf(10.0f, atof(value) / 20.0f);
             debugprint(1, "%s: gain=%f\n", __func__, atof(value));
             break;
         case GAIN_LIN_OPT:
@@ -126,7 +126,8 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
 void help_gain(void)
 {
     debugprint(0, "  Gain options\n");
-    debugprint(0, "    Name: gain\n    g=gain value (linear)\n");
+    debugprint(0, "    Name: gain\n    g=gain value (dB)\n");
+    debugprint(0, "    Name: gain\n    gl=gain value (linear)\n");
     debugprint(0, "    Name: gain\n    d=delay value (seconds)\n");
-    debugprint(0, "    Example: -p gain,g=0.5,d=0.002\n");
+    debugprint(0, "    Example: -p gain,g=-3,d=0.002\n");
 }

@@ -110,7 +110,7 @@ int create_gate(struct qdsp_t * dsp, char ** subopts)
                 errfnd = 1;
                 continue;
             }
-            state->threshold = powf(10,atof(value)/20);
+            state->threshold = powf(10.0f, atof(value) / 20.0f);
             debugprint(1, "%s: threshold=%f\n", __func__, atof(value));
             break;
         case HOLDTIME_OPT:
