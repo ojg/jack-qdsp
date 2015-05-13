@@ -14,41 +14,34 @@ def readaudio():
 
 def compareaudio(data1, data2):
     if (abs(data1 - data2) > 1e-7).any():
-        print "fail"
+        print "Fail"
+        quit()
     else:
-        print "pass"
+        print "Pass"
 
 
 def test_gain():
+    print "Testing dsp-gain"
+
     #generate test input
     ref = linspace(-1, 1, 200)
     writeaudio(ref)
 
     #create reference output
     expected = ref*(10**(-1.0/20))
-
+    
     #run file-qdsp
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p gain,g=-1")
-
+    
     #compare results
     compareaudio(expected, readaudio())
 
-    #create reference output
     expected = concatenate((zeros(48), ref[0:-48]))
-
-    #run file-qdsp
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p gain,d=0.001")
-
-    #compare results
     compareaudio(expected, readaudio())
 
-    #create reference output
     expected = concatenate((zeros(96), ref[0:-96]))
-
-    #run file-qdsp
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p gain,d=0.002")
-
-    #compare results
     compareaudio(expected, readaudio())
 
 
