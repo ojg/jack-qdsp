@@ -1,26 +1,46 @@
 #!/usr/bin/env python
 
-import numpy as np
+from numpy import *
 import os as os
 import scikits.audiolab as alab
 
-#generate test input
-ref = np.linspace(-1, 1, 200)
-alab.flacwrite(ref, 'test_in.flac', 48000, 'pcm24')
+def writeaudio(data):
+    alab.wavwrite(data, 'test_in.wav', 48000, 'float32')
 
-#create reference output
-expected = ref*(10**(-1.0/20))
 
-#run file-qdsp
-os.system("../file-qdsp -n 64 -i test_in.flac -o test_out.flac -p gain,g=-1")
+def readaudio():
+    return alab.wavread("test_out.wav")[0]
 
-#read result file
-res = alab.flacread("test_out.flac")[0]
 
-#compare results
-if (abs(expected - res) > 1e-6).any():
-    print "fail"
-else:
-    print "pass"
+def compareaudio(data1, data2):
+    if (abs(data1 - data2) > 1e-7).any():
+        print "fail"
+    else:
+        print "pass"
 
+
+def test_gain():
+    #generate test input
+    ref = linspace(-1, 1, 200)
+    writeaudio(ref)
+
+    #create reference output
+    expected = ref*(10**(-1.0/20))
+
+    #run file-qdsp
+    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p gain,g=-1")
+
+    #read result file
+    res = readaudio()
+
+    #compare results
+    compareaudio(expected, res)
+
+
+def main():
+    test_gain()
+
+
+if __name__ == "__main__":
+    main()
 
