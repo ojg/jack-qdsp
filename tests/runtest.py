@@ -29,10 +29,10 @@ def test_gain():
 
     #create reference output
     expected = ref*(10**(-1.0/20))
-    
+
     #run file-qdsp
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p gain,g=-1")
-    
+
     #compare results
     compareaudio(expected, readaudio())
 
@@ -42,6 +42,10 @@ def test_gain():
 
     expected = concatenate((zeros(96), ref[0:-96]))
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p gain,d=0.002")
+    compareaudio(expected, readaudio())
+
+    expected = minimum(maximum(ref, -(10**(-6.0/20))), (10**(-6.0/20)))
+    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p gain,t=-6")
     compareaudio(expected, readaudio())
 
 
