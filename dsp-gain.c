@@ -13,7 +13,18 @@ struct qdsp_gain_state_t {
     int delay_samples;
     float * delayline;
     int offset;
+    float clip_threshold;
 };
+
+static inline float gain_and_clip_sample(float sample, float gain, float clip_threshold)
+{
+    sample *= gain;
+    if (clip_threshold < 1.0f) {
+        if (sample > clip_threshold) sample = clip_threshold;
+        else if (sample < -clip_threshold) sample = -clip_threshold;
+    }
+    return sample;
+}
 
 void gain_process(struct qdsp_t * dsp)
 {
@@ -25,7 +36,7 @@ void gain_process(struct qdsp_t * dsp)
             float * restrict delayline = &state->delayline[state->delay_samples * i];
             k = state->offset;
             for (n=0; n<dsp->nframes; n++) {
-                dsp->outbufs[i][n] = state->gain * delayline[k];
+                dsp->outbufs[i][n] = gain_and_clip_sample(delayline[k], state->gain, state->clip_threshold);
                 delayline[k] = dsp->inbufs[i][n];
                 if (++k == state->delay_samples) k=0;
             }
@@ -37,12 +48,12 @@ void gain_process(struct qdsp_t * dsp)
         for (i=0; i<dsp->nchannels; i++) {
             float * restrict delayline = &state->delayline[state->delay_samples * i];
             for (n=0, k=dsp->nframes - state->delay_samples; n<state->delay_samples; n++, k++) {
-                dsp->outbufs[i][n] = state->gain * delayline[n];
+                dsp->outbufs[i][n] = gain_and_clip_sample(delayline[n], state->gain, state->clip_threshold);
                 delayline[n] = dsp->inbufs[i][k];
             }
             DEBUG3("i=%p:%.2f, o=%p:%.2f, n=%d\t", dsp->inbufs[i], dsp->inbufs[i][n], dsp->outbufs[i], dsp->outbufs[i][n], n);
             for (k=0; n<dsp->nframes; n++, k++) {
-                dsp->outbufs[i][n] = state->gain * dsp->inbufs[i][k];
+                dsp->outbufs[i][n] = gain_and_clip_sample(dsp->inbufs[i][k], state->gain, state->clip_threshold);
             }
             DEBUG3("k=%d\n", k);
         }
@@ -64,11 +75,13 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
         GAIN_OPT = 0,
         GAIN_LIN_OPT,
         DELAY_OPT,
+        THRESHOLD_OPT,
     };
     char *const token[] = {
         [GAIN_OPT]   = "g",
         [GAIN_LIN_OPT]   = "gl",
         [DELAY_OPT]  = "d",
+        [THRESHOLD_OPT]  = "t",
         NULL
     };
     char *value;
@@ -80,6 +93,7 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
     state->delay_seconds = 0;
     state->gain = 1.0f;
     state->offset = 0;
+    state->clip_threshold = 1.0f;
 
     debugprint(1, "%s subopts: %s\n", __func__, *subopts);
     while (**subopts != '\0' && !errfnd) {
@@ -111,6 +125,15 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
             state->delay_seconds = atof(value);
             debugprint(1, "%s: delay_seconds=%f\n", __func__, atof(value));
             break;
+        case THRESHOLD_OPT:
+            if (value == NULL) {
+                debugprint(0, "%s: Missing value for suboption '%s'\n", __func__, token[THRESHOLD_OPT]);
+                errfnd = 1;
+                continue;
+            }
+            state->clip_threshold = powf(10.0f, atof(value) / 20.0f);
+            debugprint(1, "%s: gain=%f\n", __func__, atof(value));
+            break;
         default:
             debugprint(0, "%s: No match found for token: /%s/\n", __func__, value);
             errfnd = 1;
@@ -126,8 +149,11 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
 void help_gain(void)
 {
     debugprint(0, "  Gain options\n");
-    debugprint(0, "    Name: gain\n    g=gain value (dB)\n");
-    debugprint(0, "    Name: gain\n    gl=gain value (linear)\n");
-    debugprint(0, "    Name: gain\n    d=delay value (seconds)\n");
-    debugprint(0, "    Example: -p gain,g=-3,d=0.002\n");
+    debugprint(0, "    Name: gain\n");
+    debugprint(0, "        g = gain value (dB)\n");
+    debugprint(0, "        gl = gain value (linear)\n");
+    debugprint(0, "        d = delay value (seconds)\n");
+    debugprint(0, "        t = clip threshold (dBFS)\n");
+    debugprint(0, "    Example: -p gain,g=-3,d=0.002,t=-6\n");
+    debugprint(0, "    Note: Gain is applied before clipping\n");
 }

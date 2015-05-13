@@ -15,6 +15,8 @@ def readaudio():
 def compareaudio(data1, data2):
     if (abs(data1 - data2) > 1e-7).any():
         print "Fail"
+        for i in range(size(data1)):
+            print array((data1[i], data2[i]))
         quit()
     else:
         print "Pass"
@@ -44,8 +46,8 @@ def test_gain():
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p gain,d=0.002")
     compareaudio(expected, readaudio())
 
-    expected = minimum(maximum(ref, -(10**(-6.0/20))), (10**(-6.0/20)))
-    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p gain,t=-6")
+    expected = minimum(maximum(ref * -0.3, -(10**(-20.0/20))), (10**(-20.0/20)))
+    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p gain,gl=-0.3,t=-20")
     compareaudio(expected, readaudio())
 
 
