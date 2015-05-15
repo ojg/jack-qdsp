@@ -6,10 +6,12 @@
 #include <math.h>
 #include "dsp.h"
 
+enum gate_status {gate_open, gate_closed, gate_release, gate_attack};
 
 struct qdsp_gate_state_t {
+    enum gate_status status[NCHANNELS_MAX];
     float threshold;
-    unsigned int hold;
+    float hold;
     unsigned int holdcount[NCHANNELS_MAX];
 };
 
@@ -18,69 +20,77 @@ void gate_process(struct qdsp_t * dsp)
     struct qdsp_gate_state_t * state = (struct qdsp_gate_state_t *)dsp->state;
     unsigned int holdthresh = (state->hold * dsp->fs) / dsp->nframes;
     int i,n;
+    float gain, gainstep;
 
     for (i=0; i<dsp->nchannels; i++) {
-        float max = 0;
         const float * inbuf = dsp->inbufs[i];
-        for (n=0; n<dsp->nframes; n++) {
-            if (max < fabsf(inbuf[n]))
-                max = fabsf(inbuf[n]);
-            if (max > state->threshold) break;
-        }
+        float * outbuf = dsp->outbufs[i];
 
-        if (state->holdcount[i] < holdthresh) {
-            // open
-            if (dsp->inbufs[i] != dsp->outbufs[i]) {
-                memcpy(dsp->outbufs[i], dsp->inbufs[i], dsp->nframes*sizeof(float));
-            }
-        }
-        else if (state->holdcount[i] == holdthresh) {
-            // attack
-            float gainstep = 1.0f / dsp->nframes;
-            const float * inbuf = dsp->inbufs[i];
-            float * outbuf = dsp->outbufs[i];
-            float gain = 1.0f;
-            for (n=0; n<dsp->nframes; n++) {
-                outbuf[n] = gain * inbuf[n];
-                gain -= gainstep;
-            }
-            DEBUG3("%s: attack\n", __func__);
-        }
-        else if (state->holdcount[i] > holdthresh && max > state->threshold) {
-            // release
-            float gainstep = 1.0f / dsp->nframes;
-            const float * inbuf = dsp->inbufs[i];
-            float * outbuf = dsp->outbufs[i];
-            float gain = 0;
-            for (n=0; n<dsp->nframes; n++) {
-                outbuf[n] = gain * inbuf[n];
-                gain += gainstep;
-            }
-            DEBUG3("%s: release\n", __func__);
-        }
-        else { //dsp->holdcount > holdthresh && max < dsp->threshold
-            // closed
-            state->holdcount[i] = holdthresh;
-            memcpy(dsp->outbufs[i], dsp->zerobuf, dsp->nframes*sizeof(float));
-            //dsp->outbufs[i] = dsp->zerobuf;
-        }
+        switch (state->status[i]) {
+            default:
+            case gate_open:
+                for (n=0; n<dsp->nframes; n++) {
+                    if (fabsf(inbuf[n]) > state->threshold) {
+                        state->holdcount[i] = 0;
+                        state->status[i] = gate_open;
+                        break;
+                    }
+                }
+                if (n == dsp->nframes) {
+                    state->holdcount[i]++;
+                    if (state->holdcount[i] >= holdthresh) {
+                        state->status[i] = gate_attack;
+                    }
+                }
+                memcpy(outbuf, inbuf, dsp->nframes*sizeof(float));
+                DEBUG3("%s: open, holdcount=%i, holdthresh=%i\n", __func__, state->holdcount[i], holdthresh);
+                break;
 
-        if (dsp->sequencecount % (dsp->fs/dsp->nframes) == 0) {
-            DEBUG3("%s: max: %.2f, holdthresh: %d, count: %d\n", __func__, 20*log10f(max), holdthresh, state->holdcount[i]);
-        }
+            case gate_closed:
+                for (n=0; n<dsp->nframes; n++) {
+                    if (fabsf(inbuf[n]) > state->threshold) {
+                        state->holdcount[i] = 0;
+                        state->status[i] = gate_release;
+                        break;
+                    }
+                }
+                memcpy(outbuf, dsp->zerobuf, dsp->nframes*sizeof(float));
+                DEBUG3("%s: closed\n", __func__);
+                break;
 
-        if (max > state->threshold)
-            state->holdcount[i] = 0;
-        else
-            state->holdcount[i]++;
+            case gate_attack:
+                gainstep = 1.0f / (dsp->nframes-1);
+                gain = 1.0f;
+                for (n=0; n<dsp->nframes; n++) {
+                    outbuf[n] = gain * inbuf[n];
+                    gain -= gainstep;
+                }
+                state->status[i] = gate_closed;
+                DEBUG3("%s: attack\n", __func__);
+                break;
+
+            case gate_release:
+                gainstep = 1.0f / (dsp->nframes-1);
+                gain = 0;
+                for (n=0; n<dsp->nframes; n++) {
+                    outbuf[n] = gain * inbuf[n];
+                    gain += gainstep;
+                }
+                state->status[i] = gate_open;
+                DEBUG3("%s: release\n", __func__);
+                break;
+        }
     }
 }
 
 void gate_init(struct qdsp_t * dsp)
 {
 	struct qdsp_gate_state_t * state = (struct qdsp_gate_state_t *)dsp->state;
-    for (int i=0; i<NCHANNELS_MAX; i++)
+
+    for (int i=0; i<NCHANNELS_MAX; i++) {
         state->holdcount[i] = 0;
+        state->status[i] = gate_open;
+    }
 }
 
 
@@ -99,6 +109,7 @@ int create_gate(struct qdsp_t * dsp, char ** subopts)
     int errfnd = 0;
     struct qdsp_gate_state_t * state = malloc(sizeof(struct qdsp_gate_state_t));
     dsp->state = (void*)state;
+    state->threshold=0;
     state->hold=0;
 
     debugprint(1, "%s: subopts: %s\n", __func__, *subopts);
@@ -119,7 +130,7 @@ int create_gate(struct qdsp_t * dsp, char ** subopts)
                 errfnd = 1;
                 continue;
             }
-            state->hold = atoi(value);
+            state->hold = atof(value);
             debugprint(1, "%s: holdtime=%d\n", __func__, atoi(value));
             break;
         default:
@@ -128,6 +139,11 @@ int create_gate(struct qdsp_t * dsp, char ** subopts)
             break;
         }
     }
+    if (state->threshold == 0) {
+        debugprint(0, "%s: Missing value for threshold.\n", __func__);
+        errfnd = 1;
+    }
+
     dsp->process = gate_process;
     dsp->init = gate_init;
 
