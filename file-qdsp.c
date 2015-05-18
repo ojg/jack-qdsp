@@ -41,6 +41,7 @@ void print_help()
 {
     int i=0;
     debugprint(0, "file-qdsp -i inputfile -o outputfile [general-options] -p dsp-name <dsp-options> [-p ...]\n\n");
+    debugprint(0, "Version: %s\n", VERSION);
     debugprint(0, "General options\n");
     debugprint(0, " -i input filename, all types supported by libsndfile, - for stdin\n");
     debugprint(0, " -o output filename, all types supported by libsndfile, - for stdout\n");

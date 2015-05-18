@@ -88,6 +88,7 @@ void print_help()
 {
     int i=0;
     debugprint(0, "jack-qdsp -c channels [general-options] -p dsp-name <dsp-options> [-p ...]\n\n");
+    debugprint(0, "Version: %s\n", VERSION);
     debugprint(0, "General options\n");
     debugprint(0, " -c channels\n");
     debugprint(0, " -s server name\n");
