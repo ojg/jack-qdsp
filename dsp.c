@@ -39,6 +39,7 @@ struct dspfuncs_t dspfuncs[] = {
         [END_OPT] = {.helpfunc = NULL, .createfunc = NULL },
 };
 
+float * pingbuf;
 
 void create_dsp(struct qdsp_t * dsp, char * subopts)
 {
@@ -73,7 +74,6 @@ void init_dsp(struct qdsp_t * dsphead)
     bool ping = false;
     struct qdsp_t * dsp;
     int i;
-    float * pingbuf = NULL;
     float * pongbuf;
     int nframes = dsphead->nframes;
     int nchannels = dsphead->nchannels;
@@ -108,6 +108,19 @@ void init_dsp(struct qdsp_t * dsphead)
         ping = !ping;
     }
 }
+
+void destroy_dsp(struct qdsp_t * dsphead)
+{
+    struct qdsp_t * dsp;
+    while (dsphead) {
+        dsp = dsphead;
+        dsphead = dsp->next;
+        dsp->destroy(dsp);
+        free(dsp);
+    }
+    free(pingbuf);
+}
+
 
 void endprogram(char * str)
 {

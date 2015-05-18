@@ -334,6 +334,10 @@ int main (int argc, char *argv[])
     if (sf_close(input_file)!=0) debugprint(0,  "Failed closing %s: %s\n", input_filename, sf_strerror(input_file));
     if (sf_close(output_file)!=0) debugprint(0,  "Failed closing %s: %s\n", output_filename, sf_strerror(output_file));
 
+    free(writebuf);
+    free(readbuf);
+    destroy_dsp(dsphead);
+
     return 0;
 }
 

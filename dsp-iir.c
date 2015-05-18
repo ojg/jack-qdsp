@@ -208,6 +208,11 @@ void iir_process(struct qdsp_t * dsp)
     }
 }
 
+void destroy_iir(struct qdsp_t * dsp)
+{
+    free(dsp->state);
+}
+
 int create_iir(struct qdsp_t * dsp, char ** subopts)
 {
     enum {
@@ -372,6 +377,7 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
     }
 
     dsp->init = init_iir;
+    dsp->destroy = destroy_iir;
 
     return errfnd;
 }
