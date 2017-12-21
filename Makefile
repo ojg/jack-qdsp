@@ -1,8 +1,8 @@
 CC=gcc
-CFLAGS=-O2 -march=native -std=c99 -Wall -Wextra -fPIC
+CFLAGS=-O2 -march=native -std=c99 -fPIC -Wall -Wextra
 LDFLAGS_JACK=-ljack -lm
 LDFLAGS_FILE=-lsndfile -lrt -lm
-SOURCES_COMMON=dsp.c dsp-gate.c dsp-gain.c dsp-iir.c
+SOURCES_COMMON=dsp.c dsp-gate.c dsp-gain.c dsp-iir.c dsp-fir.c
 SOURCES_JACK=$(SOURCES_COMMON) jack-qdsp.c
 SOURCES_FILE=$(SOURCES_COMMON) file-qdsp.c
 DEPS=dsp.h

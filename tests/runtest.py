@@ -115,14 +115,40 @@ def test_fir():
     print "Testing dsp-fir"
 
     ref = concatenate(([1], zeros(511)))
-    writeaudio(ref)
 
-    #test mono fir
+    #test short mono fir
+    writeaudio(ref)
     h = signal.firwin(21, 0.4)
-    savetxt("test_coeffs_48000.txt", h)
+    savetxt("test_coeffs.txt", h)
     expected = signal.lfilter(h, 1, ref)
-    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p fir,test_coeffs_48000.txt")
+    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
     compareaudio(expected, readaudio())
+
+    #test long mono fir
+    writeaudio(ref)
+    h = signal.firwin(73, 0.4)
+    savetxt("test_coeffs.txt", h)
+    expected = signal.lfilter(h, 1, ref)
+    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
+    compareaudio(expected, readaudio())
+
+    #test short stereo fir, mono coeffs
+    writeaudio(transpose([ref,-ref]))
+    h = signal.firwin(21, 0.4)
+    savetxt("test_coeffs.txt", h)
+    expected = signal.lfilter(h, 1, ref)
+    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
+    compareaudio(transpose([expected, -expected]), readaudio())
+
+    #test long stereo fir, mono coeffs
+    writeaudio(transpose([ref,-ref]))
+    h = signal.firwin(75, 0.4)
+    savetxt("test_coeffs.txt", h)
+    expected = signal.lfilter(h, 1, ref)
+    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
+    compareaudio(transpose([expected, -expected]), readaudio())
+
+    os.remove('test_coeffs.txt')
 
 
 def main():
