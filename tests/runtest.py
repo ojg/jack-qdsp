@@ -17,8 +17,7 @@ def compareaudio(data1, data2, threshold=1e-7):
     if (abs(data1 - data2) > threshold).any():
         maxdev = amax(abs(data1 - data2))
         print "Fail %f" % maxdev
-        for i in range(size(data1)):
-            print array((i, data1[i], data2[i]))
+        print hstack([data1, data2])
         quit()
     else:
         print "Pass"
@@ -108,9 +107,9 @@ def test_iir():
     compareaudio(expected, readaudio())
 
     #test HP2 stereo
-    writeaudio(transpose([ref,ref]))
+    writeaudio(transpose([ref,-ref]))
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p iir,hp2,f=100,q=0.7071,g=-6")
-    compareaudio(transpose([expected, expected]), readaudio())
+    compareaudio(transpose([expected, -expected]), readaudio())
 
 
 def main():
