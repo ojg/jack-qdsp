@@ -21,17 +21,25 @@ void fir_process(struct qdsp_t * dsp)
     if (dsp->nchannels == 2) {
         float * delayline0  = state->delayline;
         float * delayline1  = &state->delayline[state->hlen];
+        unsigned hlen1 = state->hlen - state->hlen % 2;
         for (int s = 0; s < dsp->nframes; s++) {
             float * coeffs = &state->coeffs[state->offset];
             delayline0[state->offset] = dsp->inbufs[0][s];
             delayline1[state->offset] = dsp->inbufs[1][s];
-            float sum0 = 0, sum1 = 0;
-            for (unsigned n = 0; n < state->hlen; n++) {
-                sum0 += coeffs[n] * delayline0[n];
-                sum1 += coeffs[n] * delayline1[n];
+            float sum[4] = { 0 };
+            unsigned n;
+            for (n = 0; n < hlen1; n+=2) {
+                sum[0] += coeffs[n] * delayline0[n];
+                sum[1] += coeffs[n] * delayline1[n];
+                sum[2] += coeffs[n+1] * delayline0[n+1];
+                sum[3] += coeffs[n+1] * delayline1[n+1];
             }
-            dsp->outbufs[0][s] = sum0;
-            dsp->outbufs[1][s] = sum1;
+            for (; n < state->hlen; n++) {
+                sum[0] += coeffs[n] * delayline0[n];
+                sum[1] += coeffs[n] * delayline1[n];
+            }
+            dsp->outbufs[0][s] = sum[0] + sum[2];
+            dsp->outbufs[1][s] = sum[1] + sum[3];
             if (++state->offset == state->hlen)
                 state->offset = 0;
         }
