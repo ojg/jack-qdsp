@@ -4,6 +4,7 @@ from numpy import *
 import os as os
 from scikits import audiolab
 from scipy import signal
+import sys
 
 def writeaudio(data):
     audiolab.wavwrite(data, 'test_in.wav', 48000, 'float32')
@@ -151,11 +152,40 @@ def test_fir():
     os.remove('test_coeffs.txt')
 
 
+def benchmarks():
+    print "Benchmarking"
+
+    #mono benchmark
+    ref = concatenate(([1], zeros(511)))
+    ref = concatenate(([1], zeros(131072-1)))
+    writeaudio(ref)
+    h = signal.firwin(8191, 0.4)
+    savetxt("test_coeffs.txt", h)
+    expected = signal.lfilter(h, 1, ref)
+    os.system("../file-qdsp -n 256 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
+    compareaudio(expected, readaudio())
+
+    #stereo benchmark
+    ref = concatenate(([1], zeros(131072-1)))
+    writeaudio(transpose([ref,-ref]))
+    h = signal.firwin(8191, 0.4)
+    savetxt("test_coeffs.txt", h)
+    expected = signal.lfilter(h, 1, ref)
+    os.system("../file-qdsp -n 256 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
+    compareaudio(transpose([expected, -expected]), readaudio())
+
+    os.remove('test_coeffs.txt')
+
+
 def main():
-    test_gain()
-    test_gate()
-    test_iir()
-    test_fir()
+    if len(sys.argv) > 1 and sys.argv[1] == "bench":
+        benchmarks()
+    else:
+        test_gain()
+        test_gate()
+        test_iir()
+        test_fir()
+
     os.remove('test_in.wav')
     os.remove('test_out.wav')
 
