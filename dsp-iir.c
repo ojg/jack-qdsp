@@ -163,7 +163,7 @@ void iir_process(struct qdsp_t * dsp)
         s2[0] = state->s[1];
         s1[1] = state->s[2];
         s2[1] = state->s[3];
-        for (n<0; n<nframes; n++) {
+        for (n=0; n<nframes; n++) {
             x[0] = (double)dsp->inbufs[0][n];
             x[1] = (double)dsp->inbufs[1][n];
             y  = s1 + b0 * x;
