@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-O2 -march=native -std=c99 -fPIC -Wall -Wextra
+CFLAGS=-O2 -march=native -std=c99 -fPIC -Wall -Wextra -Wa,-adhln
 LDFLAGS_JACK=-ljack -lm
 LDFLAGS_FILE=-lsndfile -lrt -lm
 SOURCES_COMMON=dsp.c dsp-gate.c dsp-gain.c dsp-iir.c dsp-fir.c
@@ -27,7 +27,7 @@ $(EXECUTABLE_FILE): $(OBJECTS_FILE)
 	$(CC) $(OBJECTS_FILE) -o $@ $(LDFLAGS_FILE)
 
 $(OBJECTS_DIR)/%.o: %.c $(DEPS)
-	$(CC) $(CFLAGS) -DVERSION=\"$(GIT_VERSION)\" -c $< -o $@
+	$(CC) $(CFLAGS) -DVERSION=\"$(GIT_VERSION)\" -c $< -o $@ > $@.s
 
 install:	all
 	sudo install -Dm 755 $(EXECUTABLE_JACK) $(INSTALLDIR)/$(EXECUTABLE_JACK)
