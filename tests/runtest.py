@@ -177,23 +177,20 @@ def test_fir():
 def benchmarks():
     print "Benchmarking"
 
-    #mono benchmark
-    ref = concatenate(([1], zeros(131072-1)))
-    writeaudio(ref)
+    ref = (2.0 * random.rand(131072)) - 1.0
     h = signal.firwin(8191, 0.4)
-    savetxt("test_coeffs.txt", h)
     expected = signal.lfilter(h, 1, ref)
+    savetxt("test_coeffs.txt", h)
+
+    #mono benchmark
+    writeaudio(ref)
     os.system("../file-qdsp -n 256 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
-    compareaudio(expected, readaudio())
+    compareaudio(expected, readaudio(), 1e-5)
 
     #stereo benchmark
-    ref = concatenate(([1], zeros(131072-1)))
     writeaudio(transpose([ref,-ref]))
-    h = signal.firwin(8191, 0.4)
-    savetxt("test_coeffs.txt", h)
-    expected = signal.lfilter(h, 1, ref)
     os.system("../file-qdsp -n 256 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
-    compareaudio(transpose([expected, -expected]), readaudio())
+    compareaudio(transpose([expected, -expected]), readaudio(), 1e-5)
 
     os.remove('test_coeffs.txt')
 
