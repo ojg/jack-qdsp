@@ -6,6 +6,57 @@
 #include <math.h>
 #include "dsp.h"
 
+#if (0) //defined(__SSE3__))
+#include <immintrin.h>
+static inline float dotp(float * x, float * y, size_t len)
+{
+    __m128 * x4p = (__m128*)x;
+    __m128 * y4p = (__m128*)y;
+    __m128 x4, y4;
+    __m128 sum4 = _mm_setzero_ps();
+    __m128 prod4;
+    float sum;
+    size_t n;
+    size_t len1 = len - (len % 4);
+
+    for (n = 0; n < len1; n+=4) {
+        x4 = _mm_loadu_ps(&x[n]);
+        y4 = _mm_loadu_ps(&y[n]);
+#if (defined(__FMA__))
+        sum4 = _mm_fmadd_ps(x4, y4, sum4);
+#else
+        prod4 = _mm_mul_ps(x4, y4);
+        sum4 = _mm_add_ps(prod4, sum4);
+#endif
+    }
+    sum4 = _mm_hadd_ps(sum4, sum4);
+    sum4 = _mm_hadd_ps(sum4, sum4);
+    _mm_store_ss(&sum, sum4);
+
+    for (; n < len; n++)
+        sum += x[n] * y[n];
+
+    return sum;
+}
+#elif (0)
+static inline float dotp(float * x, float * y, size_t len)
+{
+    float sum[4] = { 0.0f };
+    size_t k,n;
+
+    for (k = 0, n = 0; k < len / 4; n+=4, k++) {
+         sum[0] += x[n] * y[n];
+         sum[1] += x[n+1] * y[n+1];
+         sum[2] += x[n+2] * y[n+2];
+         sum[3] += x[n+3] * y[n+3];
+    }
+
+    for (; n < len; n++)
+        sum[0] += x[n] * y[n];
+
+    return sum[0] + sum[1] + sum[2] + sum[3];
+}
+#else
 static inline float dotp(float * x, float * y, size_t len)
 {
     float sum = 0;
@@ -14,6 +65,7 @@ static inline float dotp(float * x, float * y, size_t len)
     }
     return sum;
 }
+#endif
 
 struct qdsp_fir_state_t {
     char * coeff_filename;
