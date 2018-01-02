@@ -151,7 +151,7 @@ void iir_process(struct qdsp_t * dsp)
 
     switch (nchannels) {
     case 2:
-#if 0
+#if 1
     {
         v2df x,y,s1,s2,b0,b1,b2,a1,a2 __attribute__ ((aligned (16)));
         a1[0] = a1[1] = state->coeffs.a1;

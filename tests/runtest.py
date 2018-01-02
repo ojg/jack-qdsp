@@ -182,17 +182,24 @@ def benchmarks():
     expected = signal.lfilter(h, 1, ref)
     savetxt("test_coeffs.txt", h)
 
-    #mono benchmark
+    #fir mono benchmark
     writeaudio(ref)
     os.system("../file-qdsp -n 256 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
     compareaudio(expected, readaudio(), 1e-5)
 
-    #stereo benchmark
+    #fir stereo benchmark
     writeaudio(transpose([ref,-ref]))
     os.system("../file-qdsp -n 256 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
     compareaudio(transpose([expected, -expected]), readaudio(), 1e-5)
 
     os.remove('test_coeffs.txt')
+
+    #iir stereo benchmark
+    writeaudio(transpose([ref,-ref]))
+    b, a = signal.butter(2, 100.0/24000, 'high')
+    expected = signal.lfilter(b,a,ref*10**(-6.0/20))
+    os.system("../file-qdsp -n 256 -i test_in.wav -o test_out.wav -p iir,hp2,f=100,q=0.7071,g=-6")
+    compareaudio(transpose([expected, -expected]), readaudio(), 1e-5)
 
 
 def main():
