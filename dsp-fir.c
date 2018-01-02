@@ -6,6 +6,15 @@
 #include <math.h>
 #include "dsp.h"
 
+static inline float dotp(float * x, float * y, size_t len)
+{
+    float sum = 0;
+    for (size_t n = 0; n < len; n++) {
+        sum += x[n] * y[n];
+    }
+    return sum;
+}
+
 struct qdsp_fir_state_t {
     char * coeff_filename;
     float * delayline;
@@ -24,11 +33,7 @@ void fir_process(struct qdsp_t * dsp)
         for (int s = 0; s < dsp->nframes; s++) {
             float * coeffs = &state->coeffs[state->hlen - 1 - offset];
             delayline[offset] = dsp->inbufs[c][s];
-            float sum = 0;
-            for (size_t n = 0; n < state->hlen; n++) {
-                sum += coeffs[n] * delayline[n];
-            }
-            dsp->outbufs[c][s] = sum;
+            dsp->outbufs[c][s] = dotp(coeffs, delayline, state->hlen);
             if (++offset == state->hlen)
                 offset = 0;
         }
