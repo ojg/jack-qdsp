@@ -6,6 +6,10 @@
 #include <math.h>
 #include "dsp.h"
 
+#if defined(_OPENMP)
+#include <omp.h>
+#endif
+
 #if (defined(__AVX__))
 #include <immintrin.h>
 static inline float dotp(float * x, float * y, size_t len)
@@ -39,8 +43,6 @@ static inline float dotp(float * x, float * y, size_t len)
 #include <immintrin.h>
 static inline float dotp(float * x, float * y, size_t len)
 {
-    __m128 * x4p = (__m128*)x;
-    __m128 * y4p = (__m128*)y;
     __m128 x4, y4;
     __m128 sum4 = _mm_setzero_ps();
     __m128 prod4;
@@ -103,8 +105,12 @@ struct qdsp_fir_state_t {
 void fir_process(struct qdsp_t * dsp)
 {
     struct qdsp_fir_state_t * state = (struct qdsp_fir_state_t *)dsp->state;
-    size_t offset = 0;
-    for (int c = 0; c < dsp->nchannels; c++) {
+    size_t offset = state->offset;
+
+#if defined(_OPENMP)
+    #pragma omp parallel for firstprivate(offset) lastprivate(offset)
+#endif
+    for (size_t c = 0; c < (size_t)dsp->nchannels; c++) {
         offset = state->offset;
         float * delayline = &state->delayline[state->hlen * c];
         for (int s = 0; s < dsp->nframes; s++) {
@@ -124,6 +130,13 @@ void fir_init(struct qdsp_t * dsp)
     state->delayline = realloc(state->delayline, dsp->nchannels * state->hlen * sizeof(float));
     memset(state->delayline, 0, dsp->nchannels * state->hlen * sizeof(float));
     state->offset = 0;
+
+#if defined(_OPENMP)
+    if (dsp->nchannels > 1 && state->hlen * dsp->nframes > 10000)
+        omp_set_num_threads(dsp->nchannels);
+    else
+        omp_set_num_threads(1);
+#endif
 }
 
 void destroy_fir(struct qdsp_t * dsp)
