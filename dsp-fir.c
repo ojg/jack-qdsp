@@ -72,7 +72,7 @@ static inline float dotp4(const float * x, const float * y, size_t len)
     float sum = 0.0f;
 
 #if (defined(__ARM_NEON__))
-    asm volatile (
+    __asm__ volatile (
                   "vmov.f32 q8, #0.0          \n\t" // zero out q8 register
                   "1:                         \n\t"
                   "subs %3, %3, #4            \n\t" // we load 4 floats into q0, and q2 register
