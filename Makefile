@@ -1,7 +1,15 @@
 CC=gcc
-CFLAGS=-std=c99 -march=native -fPIC -O2 -Wall -Wextra -Wa,-adhln
-LDFLAGS_JACK=-ljack -lm
-LDFLAGS_FILE=-lsndfile -lrt -lm
+CFLAGS=-std=c99 -fPIC -Wall -Wextra -Wa,-adhln -fopenmp
+
+UNAME_M := $(shell uname -m)
+ifneq ($(filter arm%,$(UNAME_M)),)
+CFLAGS += -O3 -march=native -mfpu=neon-vfpv4 -mtune=cortex-a53 -ffast-math
+else
+CFLAGS += -O2 -march=native
+endif
+
+LDFLAGS_JACK=-ljack -lm -fopenmp
+LDFLAGS_FILE=-lsndfile -lrt -lm -fopenmp
 SOURCES_COMMON=dsp.c dsp-gate.c dsp-gain.c dsp-iir.c dsp-fir.c
 SOURCES_JACK=$(SOURCES_COMMON) jack-qdsp.c
 SOURCES_FILE=$(SOURCES_COMMON) file-qdsp.c
@@ -32,9 +40,9 @@ $(OBJECTS_DIR)/%.o: %.c $(DEPS)
 install:	all
 	sudo install -Dm 755 $(EXECUTABLE_JACK) $(INSTALLDIR)/$(EXECUTABLE_JACK)
 	sudo install -Dm 755 $(EXECUTABLE_FILE) $(INSTALLDIR)/$(EXECUTABLE_FILE)
-    
+
 .PHONY: clean
-clean: 
+clean:
 	rm -rf $(OBJECTS_JACK) $(EXECUTABLE_JACK)
 	rm -rf $(OBJECTS_FILE) $(EXECUTABLE_FILE)
 
