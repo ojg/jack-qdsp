@@ -10,47 +10,60 @@
 #include <omp.h>
 #endif
 
-#if (defined(__AVX__))
+#if defined(__SSE3__)
 #include <immintrin.h>
-static inline float dotp(float * x, float * y, size_t len)
+#endif
+
+#if (defined(__AVX__))
+static inline float dotp8(float * x, float * y, size_t len)
 {
-    __m256 x4, y4;
-    __m256 sum4 = _mm256_setzero_ps();
+    __m256 x8, y8;
+    __m256 sum8 = _mm256_setzero_ps();
     float sum;
     size_t n;
-    size_t len1 = len - (len % 8);
+    size_t len1 = len & ~7;
 
     for (n = 0; n < len1; n+=8) {
-        x4 = _mm256_loadu_ps(&x[n]);
-        y4 = _mm256_loadu_ps(&y[n]);
+        x8 = _mm256_loadu_ps(&x[n]);
+        y8 = _mm256_loadu_ps(&y[n]);
 #if (defined(__FMA__))
-        sum4 = _mm256_fmadd_ps(x4, y4, sum4);
+        sum8 = _mm256_fmadd_ps(x8, y8, sum8);
 #else
-        prod4 = _mm256_mul_ps(x4, y4);
-        sum4 = _mm256_add_ps(prod4, sum4);
+        sum8 = _mm256_add_ps(sum8, _mm256_mul_ps(x8, y8));
 #endif
     }
-    sum4 = _mm256_hadd_ps(sum4, sum4);
-    sum4 = _mm256_hadd_ps(sum4, sum4);
-    _mm_store_ss(&sum, _mm_add_ps(_mm256_extractf128_ps(sum4, 0), _mm256_extractf128_ps(sum4, 1)));
-
-    for (; n < len; n++)
-        sum += x[n] * y[n];
+    sum8 = _mm256_hadd_ps(sum8, sum8);
+    sum8 = _mm256_hadd_ps(sum8, sum8);
+    _mm_store_ss(&sum, _mm_add_ps(_mm256_extractf128_ps(sum8, 0), _mm256_extractf128_ps(sum8, 1)));
 
     return sum;
 }
-#elif (defined(__SSE3__))
-#include <immintrin.h>
-static inline float dotp(float * x, float * y, size_t len)
+#endif
+
+static inline float dotp4(const float * x, const float * y, size_t len)
 {
+    float sum = 0.0f;
+
+#if (defined(__ARM_NEON__))
+    asm volatile (
+                  "vmov.f32 q8, #0.0          \n\t" // zero out q8 register
+                  "1:                         \n\t"
+                  "subs %3, %3, #4            \n\t" // we load 4 floats into q0, and q2 register
+                  "vld1.f32 {d0,d1}, [%1]!    \n\t" // loads q0, update pointer *x
+                  "vld1.f32 {d4,d5}, [%2]!    \n\t" // loads q2, update pointer *y
+                  "vmla.f32 q8, q0, q2        \n\t" // store four partial sums in q8
+                  "bgt 1b                     \n\t" // loops to label 1 until len==0
+                  "vpadd.f32 d0, d16, d17     \n\t" // pairwise add 4 partial sums in q8, store in d0
+                  "vadd.f32 %0, s0, s1        \n\t" // add 2 partial sums in d0, store result in return variable
+                  : "=w"(sum)                 // output
+                  : "r"(x), "r"(y), "r"(len)    // input
+                  : "q0", "q2", "q8");        // clobber list
+
+#elif (defined(__SSE3__))
     __m128 x4, y4;
     __m128 sum4 = _mm_setzero_ps();
     __m128 prod4;
-    float sum;
-    size_t n;
-    size_t len1 = len - (len % 4);
-
-    for (n = 0; n < len1; n+=4) {
+    for (size_t n = 0; n < len; n+=4) {
         x4 = _mm_loadu_ps(&x[n]);
         y4 = _mm_loadu_ps(&y[n]);
         prod4 = _mm_mul_ps(x4, y4);
@@ -60,39 +73,29 @@ static inline float dotp(float * x, float * y, size_t len)
     sum4 = _mm_hadd_ps(sum4, sum4);
     _mm_store_ss(&sum, sum4);
 
-    for (; n < len; n++)
-        sum += x[n] * y[n];
-
-    return sum;
-}
-#elif (1)
-static inline float dotp(float * x, float * y, size_t len)
-{
-    float sum[4] = { 0.0f };
-    size_t k,n;
-
-    for (k = 0, n = 0; k < len / 4; n+=4, k++) {
-         sum[0] += x[n] * y[n];
-         sum[1] += x[n+1] * y[n+1];
-         sum[2] += x[n+2] * y[n+2];
-         sum[3] += x[n+3] * y[n+3];
-    }
-
-    for (; n < len; n++)
-        sum[0] += x[n] * y[n];
-
-    return sum[0] + sum[1] + sum[2] + sum[3];
-}
 #else
-static inline float dotp(float * x, float * y, size_t len)
-{
-    float sum = 0;
     for (size_t n = 0; n < len; n++) {
         sum += x[n] * y[n];
     }
+#endif
     return sum;
 }
+
+static inline float dotp(float * x, float * y, size_t len)
+{
+#if (defined(__AVX__))
+    size_t len1 = len & ~7;
+    float sum = dotp8(x, y, len1);
+#else
+    size_t len1 = len & ~3;
+    float sum = dotp4(x, y, len1);
 #endif
+
+    for (size_t n = len1; n < len; n++)
+        sum += x[n] * y[n];
+
+    return sum;
+}
 
 struct qdsp_fir_state_t {
     char * coeff_filename;
