@@ -80,8 +80,8 @@ static inline float dotp4(const float * x, const float * y, size_t len)
                   "vmov.f32 q8, #0.0          \n\t" // zero out q8 register
                   "1:                         \n\t"
                   "subs %3, %3, #4            \n\t" // we load 4 floats into q0, and q2 register
-                  "vld1.f32 {d0,d1}, [%1]!    \n\t" // loads q0, update pointer *x
-                  "vld1.f32 {d4,d5}, [%2]!    \n\t" // loads q2, update pointer *y
+                  "vld1.f32 {d0,d1}, [%1, :32]!    \n\t" // loads q0, update pointer *x
+                  "vld1.f32 {d4,d5}, [%2, :32]!    \n\t" // loads q2, update pointer *y
                   "vmla.f32 q8, q0, q2        \n\t" // store four partial sums in q8
                   "bgt 1b                     \n\t" // loops to label 1 until len==0
                   "vpadd.f32 d0, d16, d17     \n\t" // pairwise add 4 partial sums in q8, store in d0
@@ -205,7 +205,8 @@ void fir_process(struct qdsp_t * dsp)
 void fir_init(struct qdsp_t * dsp)
 {
     struct qdsp_fir_state_t * state = (struct qdsp_fir_state_t *)dsp->state;
-    state->delayline = realloc(state->delayline, dsp->nchannels * state->hlen * sizeof(float));
+    free(state->delayline);
+    state->delayline = valloc(dsp->nchannels * state->hlen * sizeof(float));
     memset(state->delayline, 0, dsp->nchannels * state->hlen * sizeof(float));
     state->offset = 0;
 
@@ -278,9 +279,9 @@ int create_fir(struct qdsp_t * dsp, char ** subopts)
 
     size_t i = 0;
     state->hlen = 256;
-    state->coeffs = malloc(state->hlen * sizeof(float)); //initial size of coeffs
+    float * tempcoeffs = malloc(state->hlen * sizeof(float)); //initial size of coeffs
     while (!feof(fid)) {
-        if (fscanf(fid, "%f\n", &state->coeffs[i]) != 1) {
+        if (fscanf(fid, "%f\n", &tempcoeffs[i]) != 1) {
             debugprint(0, "%s: Read error in file: %s\n", __func__, state->coeff_filename);
             fclose(fid);
             errfnd = 1;
@@ -288,17 +289,18 @@ int create_fir(struct qdsp_t * dsp, char ** subopts)
         }
         if (++i == state->hlen) {
             state->hlen = i * 2;
-            state->coeffs = realloc(state->coeffs, state->hlen * sizeof(float)); //realloc if size grows
+            tempcoeffs = realloc(tempcoeffs, state->hlen * sizeof(float)); //realloc if size grows
         }
     }
     fclose(fid);
     state->hlen = i;
     debugprint(2, "%s: state->hlen=%d\n", __func__, state->hlen);
-    debugprint(2, "%s: state->coeff[1]=%e\n", __func__, state->coeffs[1]);
-    state->coeffs = realloc(state->coeffs, state->hlen * 2 * sizeof(float)); //realloc to final size * 2
+    debugprint(2, "%s: state->coeff[1]=%e\n", __func__, tempcoeffs[1]);
+    state->coeffs = valloc(state->hlen * 2 * sizeof(float)); //realloc to final size * 2
     for (i = 0; i < state->hlen; i++)
-        state->coeffs[state->hlen * 2 - i - 1] = state->coeffs[i]; //reverse coeffs for second half
+        state->coeffs[state->hlen * 2 - i - 1] = tempcoeffs[i]; //reverse coeffs for second half
     memcpy(state->coeffs, &state->coeffs[state->hlen], state->hlen * sizeof(float)); //duplicate reversed coeffs
+    free(tempcoeffs);
 
     return errfnd;
 }

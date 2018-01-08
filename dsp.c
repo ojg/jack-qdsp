@@ -87,7 +87,8 @@ void init_dsp(struct qdsp_t * dsphead)
     int nchannels = dsphead->nchannels;
 
     /* allocate tempbuf as one large buffer */
-    pingbuf = realloc(pingbuf, (2 * nchannels + 1) * nframes * sizeof(float));
+    free(pingbuf);
+    pingbuf = valloc((2 * nchannels + 1) * nframes * sizeof(float));
     if (!pingbuf) endprogram("Could not allocate memory for temporary buffer.\n");
     /* Todo: Does realloc return NULL on fail? */
 
