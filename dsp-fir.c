@@ -188,8 +188,13 @@ void fir_process(struct qdsp_t * dsp)
         float * delayline = &state->delayline[state->hlen * c];
         for (int s = 0; s < dsp->nframes; s++) {
             float * coeffs = &state->coeffs[state->hlen - 1 - offset];
+            float suma, sumb = 0;
             delayline[offset] = dsp->inbufs[c][s];
-            dsp->outbufs[c][s] = dotp(coeffs, delayline, state->hlen);
+            suma = dotp(coeffs, delayline, state->hlen);
+            //suma = dotp(coeffs, delayline, state->hlen/2);
+            //sumb = dotp(coeffs+state->hlen/2, delayline+state->hlen/2, state->hlen-state->hlen/2);
+            //dotp_2(&suma, &sumb, delayline, delayline+state->hlen/2, coeffs, coeffs+state->hlen/2, state->hlen/2);
+            dsp->outbufs[c][s] = suma + sumb;
             if (++offset == state->hlen)
                 offset = 0;
         }
