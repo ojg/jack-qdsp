@@ -122,9 +122,6 @@ static inline float dotp(float * x, float * y, size_t len)
     float sum = dotp4(x, y, len1);
 #endif
 
-    for (size_t n = len1; n < len; n++)
-        sum += x[n] * y[n];
-
     return sum;
 }
 
@@ -142,10 +139,6 @@ static inline void dotp_2(float * sumy, float * sumz, float * y, float * z, floa
     }
 #endif
 
-    for (size_t n = len1; n < len; n++) {
-        suma += y[n] * yc[n];
-        sumb += z[n] * zc[n];
-    }
     *sumy = suma;
     *sumz = sumb;
 }
@@ -190,10 +183,10 @@ void fir_process(struct qdsp_t * dsp)
             float * coeffs = &state->coeffs[state->hlen - 1 - offset];
             float suma, sumb = 0;
             delayline[offset] = dsp->inbufs[c][s];
-            suma = dotp(coeffs, delayline, state->hlen);
+            //dsp->outbufs[c][s] = dotp(coeffs, delayline, state->hlen);
             //suma = dotp(coeffs, delayline, state->hlen/2);
-            //sumb = dotp(coeffs+state->hlen/2, delayline+state->hlen/2, state->hlen-state->hlen/2);
-            //dotp_2(&suma, &sumb, delayline, delayline+state->hlen/2, coeffs, coeffs+state->hlen/2, state->hlen/2);
+            //sumb = dotp(coeffs+state->hlen/2, delayline+state->hlen/2, state->hlen/2);
+            dotp_2(&suma, &sumb, delayline, delayline+state->hlen/2, coeffs, coeffs+state->hlen/2, state->hlen/2);
             dsp->outbufs[c][s] = suma + sumb;
             if (++offset == state->hlen)
                 offset = 0;
@@ -294,13 +287,20 @@ int create_fir(struct qdsp_t * dsp, char ** subopts)
     }
     fclose(fid);
     state->hlen = i;
+#if (defined(__AVX__))
+    size_t exphlen = (i & ~15) + 16;
+#else
+    size_t exphlen = (i & ~7) + 8;
+#endif
     debugprint(2, "%s: state->hlen=%d\n", __func__, state->hlen);
     debugprint(2, "%s: state->coeff[1]=%e\n", __func__, tempcoeffs[1]);
-    state->coeffs = valloc(state->hlen * 2 * sizeof(float)); //realloc to final size * 2
+    state->coeffs = valloc(exphlen * 2 * sizeof(float)); //realloc to final size * 2
+    memset(state->coeffs, 0, exphlen * 2 * sizeof(float));
     for (i = 0; i < state->hlen; i++)
-        state->coeffs[state->hlen * 2 - i - 1] = tempcoeffs[i]; //reverse coeffs for second half
-    memcpy(state->coeffs, &state->coeffs[state->hlen], state->hlen * sizeof(float)); //duplicate reversed coeffs
+        state->coeffs[exphlen * 2 - i - 1] = tempcoeffs[i]; //reverse coeffs for second half
+    memcpy(state->coeffs, &state->coeffs[exphlen], exphlen * sizeof(float)); //duplicate reversed coeffs
     free(tempcoeffs);
+    state->hlen = exphlen;
 
     return errfnd;
 }
