@@ -1,31 +1,36 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from numpy import *
 import os as os
-from scikits import audiolab
+#from scikits import audiolab
+import audioio as aio
 from scipy import signal
 import sys
 
 def writeaudio(data, filename='test_in.wav'):
-    audiolab.wavwrite(data, filename, 48000, 'float32')
+    #audiolab.wavwrite(data, filename, 48000, 'float32')
+    aio.write_audio(filename, data, 48000, encoding='FLOAT')
 
 
 def readaudio():
-    return audiolab.wavread("test_out.wav")[0]
+    #return audiolab.wavread("test_out.wav")[0]
+    data, rate = aio.load_audio('test_out.wav')
+    return data
 
 
 def compareaudio(data1, data2, threshold=1e-7):
+    data1 = data1.reshape(data2.shape)
     if (abs(data1 - data2) > threshold).any():
         maxdev = amax(abs(data1 - data2))
-        print "Fail %f" % maxdev
-        print hstack([data1, data2])
+        print("Fail %f" % maxdev)
+        print(hstack([data1, data2]))
         quit()
     else:
-        print "Pass"
+        print("Pass")
 
 
 def test_gain():
-    print "Testing dsp-gain"
+    print("Testing dsp-gain")
 
     #generate test input
     ref = linspace(-1, 1, 200)
@@ -54,7 +59,7 @@ def test_gain():
 
 
 def test_gate():
-    print "Testing dsp-gate"
+    print("Testing dsp-gate")
 
     ref = linspace(-0.25, 0.25, 200)
     writeaudio(ref)
@@ -90,7 +95,7 @@ def test_gate():
 
 
 def test_iir():
-    print "Testing dsp-iir"
+    print("Testing dsp-iir")
 
     ref = (2.0 * random.rand(512)) - 1.0
     writeaudio(ref)
@@ -113,7 +118,7 @@ def test_iir():
     compareaudio(transpose([expected, -expected]), readaudio(), 1e-6)
 
 def test_fir():
-    print "Testing dsp-fir"
+    print("Testing dsp-fir")
 
     #ref = ones(512)
     ref = (2.0 * random.rand(512)) - 1.0
@@ -175,7 +180,7 @@ def test_fir():
 
 
 def benchmarks():
-    print "Benchmarking"
+    print("Benchmarking")
 
     ref = (2.0 * random.rand(131072)) - 1.0
     h = signal.firwin(8191, 0.4)
