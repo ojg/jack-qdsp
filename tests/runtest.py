@@ -54,6 +54,10 @@ def test_gain():
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p gain,gl=-0.3,t=-20")
     compareaudio(expected, readaudio())
 
+    expected = minimum(maximum(ref * 2.0, -(10**(0.0/20))), (10**(0.0/20)))
+    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p gain,gl=2")
+    compareaudio(expected, readaudio())
+
 
 def test_gate():
     print("Testing dsp-gate")

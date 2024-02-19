@@ -18,12 +18,7 @@ struct qdsp_gain_state_t {
 
 static inline float gain_and_clip_sample(float sample, float gain, float clip_threshold)
 {
-    sample *= gain;
-    if (clip_threshold < 1.0f) {
-        if (sample > clip_threshold) sample = clip_threshold;
-        else if (sample < -clip_threshold) sample = -clip_threshold;
-    }
-    return sample;
+    return fmaxf(fminf(gain * sample, clip_threshold), -clip_threshold);
 }
 
 void gain_process(struct qdsp_t * dsp)
