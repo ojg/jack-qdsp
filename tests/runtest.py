@@ -2,19 +2,16 @@
 
 from numpy import *
 import os as os
-#from scikits import audiolab
-import audioio as aio
+import soundfile as sf
 from scipy import signal
 import sys
 
 def writeaudio(data, filename='test_in.wav'):
-    #audiolab.wavwrite(data, filename, 48000, 'float32')
-    aio.write_audio(filename, data, 48000, encoding='FLOAT')
+    sf.write(file=filename, data=data, samplerate=48000, subtype='FLOAT')
 
 
-def readaudio():
-    #return audiolab.wavread("test_out.wav")[0]
-    data, rate = aio.load_audio('test_out.wav')
+def readaudio(filename='test_out.wav'):
+    data, rate = sf.read(file=filename)
     return data
 
 
