@@ -127,11 +127,12 @@ bool get_rawfileopts(SF_INFO * input_sfinfo, char * subopts)
     };
     char *value;
     int errfnd = 0;
-
-    memset(input_sfinfo, 0, sizeof(*input_sfinfo));
+    int curtoken;
+    int curparammask = 0;
 
     while (*subopts != '\0' && !errfnd) {
-        switch (getsubopt(&subopts, token, &value)) {
+        curtoken = getsubopt(&subopts, token, &value);
+        switch (curtoken) {
         case FS_OPT:
             if (value == NULL) {
                 debugprint(0,  "Missing value for suboption '%s'\n", token[FS_OPT]);
@@ -164,7 +165,17 @@ bool get_rawfileopts(SF_INFO * input_sfinfo, char * subopts)
             errfnd = 1;
             break;
         }
+        curparammask |= 1 << curtoken;
+
     }
+
+    if (curparammask != 7) {
+        debugprint(0, "%s: Not enough suboptions for -r\n", __func__);
+        errfnd = 1;
+    }
+
+    input_sfinfo->format |= SF_FORMAT_RAW;
+
     return !errfnd;
 }
 
@@ -180,7 +191,6 @@ int main (int argc, char *argv[])
     struct qdsp_t *dsp = NULL;
     float *readbuf, *writebuf;
     unsigned int nframes=1024, totframes=0, nframesread=0;
-    bool israwinput = false;
     struct timespec t,t2,ttot,res;
     int i,c,itmp;
     debuglevel = 0;
@@ -194,12 +204,15 @@ int main (int argc, char *argv[])
         exit(1);
     }
 
+    memset(&input_sfinfo, 0, sizeof(input_sfinfo));
+
     /* Get command line options */
     while ((c = getopt (argc, argv, "r:n:i:o:p:v::h?")) != -1) {
         switch (c) {
         case 'r':
             // for raw file support
-            israwinput = get_rawfileopts(&input_sfinfo, optarg);
+            if (!get_rawfileopts(&input_sfinfo, optarg))
+                endprogram("Wrong options for -r\n");
             break;
         case 'n':
             nframes = atoi(optarg);
@@ -240,7 +253,7 @@ int main (int argc, char *argv[])
         case 'h':
         case '?':
             print_help();
-            break;
+            exit(0);
         }
     }
 
@@ -253,10 +266,12 @@ int main (int argc, char *argv[])
     if ((nframes == 0) || (nframes & (nframes - 1))) endprogram("Framesize must be a power of two.\n");
 
     /* open files */
-    if (israwinput)
-        input_sfinfo.format |= SF_FORMAT_RAW;
-    else
-        memset(&input_sfinfo, 0, sizeof(input_sfinfo));
+    if (!input_filename)
+        endprogram("Must specify input file\n");
+
+    if (!output_filename)
+        endprogram("Must specify output file\n");
+
     if (!(input_file = sf_open(input_filename, SFM_READ, &input_sfinfo))) {
         debugprint(0, "Could not open file %s for reading.\n", input_filename);
         endprogram("");
@@ -274,6 +289,7 @@ int main (int argc, char *argv[])
     channels = input_sfinfo.channels;
     if (channels < 1 || channels > NCHANNELS_MAX) endprogram("Invalid number of channels specified\n");
 
+    if (!dsphead) endprogram("No processing specified\n");
     dsphead->fs = input_sfinfo.samplerate;
     dsphead->nchannels = channels;
     dsphead->nframes = nframes;
@@ -292,15 +308,22 @@ int main (int argc, char *argv[])
         }
         totframes += nframes;
         debugprint(3, "inbufs=%p\n", dsp->inbufs[0]);
+
         deinterleave((float*)dsphead->inbufs[0], readbuf, channels, nframes);
+
         feclearexcept(FE_ALL_EXCEPT);
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t);
+
         dsp = process(nframes, dsphead);
+
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t2); t = timespecsub(t,t2); ttot = timespecadd(t,ttot);
         raised = fetestexcept(FE_INEXACT | FE_DIVBYZERO | FE_UNDERFLOW | FE_OVERFLOW | FE_INVALID);
         if (raised) debugprint(3, "FE exception raised: 0x%02X\n", raised);
+
         debugprint(3, "outbufs=%p\n", dsp->outbufs[0]);
+
         interleave(writebuf, dsp->outbufs[0], channels, nframes);
+
         if (nframesread != sf_writef_float(output_file, writebuf, nframesread))
             break;
     }
