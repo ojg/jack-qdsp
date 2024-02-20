@@ -6,8 +6,8 @@ from scikits import audiolab
 from scipy import signal
 import sys
 
-def writeaudio(data):
-    audiolab.wavwrite(data, 'test_in.wav', 48000, 'float32')
+def writeaudio(data, filename='test_in.wav'):
+    audiolab.wavwrite(data, filename, 48000, 'float32')
 
 
 def readaudio():
@@ -92,38 +92,40 @@ def test_gate():
 def test_iir():
     print "Testing dsp-iir"
 
-    ref = concatenate(([1], zeros(511)))
+    ref = (2.0 * random.rand(512)) - 1.0
     writeaudio(ref)
 
     #test LP2 mono
     b, a = signal.butter(2, 100.0/24000, 'low')
     expected = signal.lfilter(b,a,ref)
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p iir,lp2,f=100,q=0.7071")
-    compareaudio(expected, readaudio())
+    compareaudio(expected, readaudio(), 1e-6)
 
     #test HP2 with gain
     b, a = signal.butter(2, 100.0/24000, 'high')
     expected = signal.lfilter(b,a,ref*10**(-6.0/20))
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p iir,hp2,f=100,q=0.7071,g=-6")
-    compareaudio(expected, readaudio())
+    compareaudio(expected, readaudio(), 1e-6)
 
     #test HP2 stereo
     writeaudio(transpose([ref,-ref]))
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p iir,hp2,f=100,q=0.7071,g=-6")
-    compareaudio(transpose([expected, -expected]), readaudio())
+    compareaudio(transpose([expected, -expected]), readaudio(), 1e-6)
 
 def test_fir():
     print "Testing dsp-fir"
 
-    ref = concatenate(([1], zeros(511)))
+    #ref = ones(512)
+    ref = (2.0 * random.rand(512)) - 1.0
 
     #test short mono fir
     writeaudio(ref)
     h = signal.firwin(21, 0.4)
     savetxt("test_coeffs.txt", h)
     expected = signal.lfilter(h, 1, ref)
+    writeaudio(expected, 'expected.wav')
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
-    compareaudio(expected, readaudio())
+    compareaudio(expected, readaudio(), 1e-6)
 
     #test long mono fir
     writeaudio(ref)
@@ -131,7 +133,7 @@ def test_fir():
     savetxt("test_coeffs.txt", h)
     expected = signal.lfilter(h, 1, ref)
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
-    compareaudio(expected, readaudio())
+    compareaudio(expected, readaudio(), 1e-6)
 
     #test short stereo fir, mono coeffs
     writeaudio(transpose([ref,-ref]))
@@ -139,7 +141,7 @@ def test_fir():
     savetxt("test_coeffs.txt", h)
     expected = signal.lfilter(h, 1, ref)
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
-    compareaudio(transpose([expected, -expected]), readaudio())
+    compareaudio(transpose([expected, -expected]), readaudio(), 1e-6)
 
     #test long stereo fir, mono coeffs
     writeaudio(transpose([ref,-ref]))
@@ -147,7 +149,27 @@ def test_fir():
     savetxt("test_coeffs.txt", h)
     expected = signal.lfilter(h, 1, ref)
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
-    compareaudio(transpose([expected, -expected]), readaudio())
+    compareaudio(transpose([expected, -expected]), readaudio(), 1e-6)
+
+    #test asymmetric mono fir
+    writeaudio(ref)
+    impulse = concatenate(([1], zeros(499)))
+    b, a = signal.butter(2, 500.0/24000, 'low')
+    h = signal.lfilter(b, a, impulse)
+    savetxt("test_coeffs.txt", h)
+    expected = signal.lfilter(h, 1, ref)
+    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
+    compareaudio(expected, readaudio(), 1e-6)
+
+    #test asymmetric stereo fir
+    writeaudio(transpose([ref,-ref]))
+    impulse = concatenate(([1], zeros(499)))
+    b, a = signal.butter(2, 500.0/24000, 'low')
+    h = signal.lfilter(b, a, impulse)
+    savetxt("test_coeffs.txt", h)
+    expected = signal.lfilter(h, 1, ref)
+    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
+    compareaudio(transpose([expected, -expected]), readaudio(), 1e-6)
 
     os.remove('test_coeffs.txt')
 
