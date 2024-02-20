@@ -1,27 +1,29 @@
 CC=gcc
-CFLAGS=-c -O3 -ffast-math -march=native -ftree-vectorize -std=c99
-LDFLAGS_JACK=-ljack
-LDFLAGS_FILE=-lsndfile -lrt
+CFLAGS=-O2 -march=native -std=c99
+LDFLAGS_JACK=-ljack -lm
+LDFLAGS_FILE=-lsndfile -lrt -lm
 SOURCES_COMMON=dsp.c dsp-gate.c dsp-gain.c dsp-iir.c dsp-clip.c
 SOURCES_JACK=$(SOURCES_COMMON) jack-qdsp.c
 SOURCES_FILE=$(SOURCES_COMMON) file-qdsp.c
 DEPS=dsp.h
-OBJECTS_JACK=$(SOURCES_JACK:.c=.o)
-OBJECTS_FILE=$(SOURCES_FILE:.c=.o)
+OBJECTS_DIR=_build
+OBJECTS_JACK=$(patsubst %.c, $(OBJECTS_DIR)/%.o, $(SOURCES_JACK))
+OBJECTS_FILE=$(patsubst %.c, $(OBJECTS_DIR)/%.o, $(SOURCES_FILE))
 EXECUTABLE_JACK=jack-qdsp
 EXECUTABLE_FILE=file-qdsp
-PREFIX=/usr
+PREFIX=/usr/local
+
 
 all: $(SOURCES_JACK) $(EXECUTABLE_JACK) $(SOURCES_FILE) $(EXECUTABLE_FILE)
    
-$(EXECUTABLE_JACK): $(OBJECTS_JACK) 
+$(EXECUTABLE_JACK): $(OBJECTS_JACK)
 	$(CC) $(OBJECTS_JACK) -o $@ $(LDFLAGS_JACK)
 
-$(EXECUTABLE_FILE): $(OBJECTS_FILE) 
+$(EXECUTABLE_FILE): $(OBJECTS_FILE)
 	$(CC) $(OBJECTS_FILE) -o $@ $(LDFLAGS_FILE)
 
-%.o: %.c $(DEPS) 
-	$(CC) $(CFLAGS) $(DEFINES) $< -o $@
+$(OBJECTS_DIR)/%.o: %.c $(DEPS)
+	$(CC) $(CFLAGS) -c $(DEFINES) -o $@ $<
 
 install:	all
 	sudo install -Dm 755 $(EXECUTABLE_JACK) $(DESTDIR)$(PREFIX)/bin/$(EXECUTABLE_JACK)
