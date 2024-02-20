@@ -202,7 +202,7 @@ int main (int argc, char *argv[])
 
     if (channels == 0) endprogram("Must specify -c\n");
 
-    /* open a client connection to the JACK server */
+    /* Open a client connection to the JACK server */
     debugprint(0, "Connecting to jack server: %s\n", server_name ? server_name : "default");
     if (server_name) options |= JackServerName;
     client = jack_client_open (client_name, options, &status, server_name);
@@ -221,33 +221,21 @@ int main (int argc, char *argv[])
         debugprint(0,  "unique name `%s' assigned\n", client_name);
     }
 
-    /* tell the JACK server to call `process()' whenever
-       there is work to be done.
-    */
-
+    /* Register callbacks */
     jack_set_process_callback (client, process, dsphead);
-
-    /* tell the JACK server to call `bufferSizeCb()' whenever
-       there is a change in buffer size
-    */
 
     jack_set_buffer_size_callback (client, bufferSizeCb, dsphead);
 
-    /* tell the JACK server to call `jack_shutdown()' if
-       it ever shuts down, either entirely, or if it
-       just decides to stop calling us.
-    */
-
     jack_on_shutdown (client, jack_shutdown, 0);
 
-    /* get the current sample rate. */
+    /* Get the current samplerate and buffersize. */
     dsphead->nchannels = channels;
     dsphead->fs = jack_get_sample_rate (client);
     dsphead->nframes = jack_get_buffer_size (client);
 
     init_dsp(dsphead);
 
-    /* create ports */
+    /* Create ports */
     for (i=0; i<channels; i++) {
         char name[20];
         sprintf(name, "in_%d", i+1);
@@ -261,9 +249,7 @@ int main (int argc, char *argv[])
                                       JackPortIsOutput, 0);
     }
 
-    /* Tell the JACK server that we are ready to roll.  Our
-     * process() callback will start running now. */
-
+    /* Activate, process() will be called from now on */
     debugprint(0,  "Activate: Samplerate: %d, Channels: %d, Buffersize: %d\n", dsphead->fs, channels, dsphead->nframes);
     if (jack_activate (client)) {
         debugprint(0, "cannot activate client");
@@ -271,12 +257,10 @@ int main (int argc, char *argv[])
     }
 
 
-    /* Connect the ports.  You can't do this before the client is
-     * activated, because we can't make connections to clients
-     * that aren't running.  Note the confusing (but necessary)
-     * orientation of the driver backend ports: playback ports are
-     * "input" to the backend, and capture ports are "output" from
-     * it.
+    /* Connect the ports specified with -i and -o.
+     * Must be done after jack_activate().
+     * Number of ports must be equal to number of channels specified with -c
+     * Or if channels=1 all ports are connected to this channel
      */
     if (input_ports) {
         char * token = strtok(input_ports,",");
@@ -314,15 +298,10 @@ int main (int argc, char *argv[])
         }
     }
 
-    /* keep running until stopped by the user */
-
+    /* Keep running until stopped by the user */
     sleep (-1);
 
-    /* this is never reached but if the program
-       had some other way to exit besides being killed,
-       they would be important to call.
-    */
-
+    /* Just to be safe */
     jack_client_close (client);
     exit (0);
 }
