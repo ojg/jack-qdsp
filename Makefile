@@ -41,3 +41,5 @@ clean:
 test:
 	$(MAKE) -C tests
 
+bench:
+	$(MAKE) -C tests ARG=bench
