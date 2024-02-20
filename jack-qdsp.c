@@ -287,7 +287,7 @@ int main (int argc, char *argv[])
         i=0;
         while (token) {
             if (i >= channels) {
-                debugprint(0, "error: number of input ports > number of channels!");
+                debugprint(0, "error: channels > 1 and number of output ports > number of channels!");
                 jack_client_close (client);
                 exit(1);
             }
