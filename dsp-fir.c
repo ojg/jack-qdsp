@@ -44,6 +44,27 @@ static inline void dotp8_2(float * sumy, float * sumz, float * y, float * z, flo
     _mm_store_ss(sumz, _mm_add_ps(_mm256_extractf128_ps(sum8z, 0), _mm256_extractf128_ps(sum8z, 1)));
 }
 
+#elif (defined(__SSE3__))
+static inline void dotp4_2(float * sumy, float * sumz, float * y, float * z, float * yc, float * zc, size_t len)
+{
+    __m128 yc4, zc4, y4, z4;
+    __m128 sum4y = _mm_setzero_ps();
+    __m128 sum4z = _mm_setzero_ps();
+    for (size_t n = 0; n < len; n+=4) {
+        yc4 = _mm_loadu_ps(&yc[n]);
+        zc4 = _mm_loadu_ps(&zc[n]);
+        y4 = _mm_loadu_ps(&y[n]);
+        z4 = _mm_loadu_ps(&z[n]);
+        sum4y = _mm_add_ps(_mm_mul_ps(yc4, y4), sum4y);
+        sum4z = _mm_add_ps(_mm_mul_ps(zc4, z4), sum4z);
+    }
+    sum4y = _mm_hadd_ps(sum4y, sum4y);
+    sum4y = _mm_hadd_ps(sum4y, sum4y);
+    _mm_store_ss(sumy, sum4y);
+    sum4z = _mm_hadd_ps(sum4z, sum4z);
+    sum4z = _mm_hadd_ps(sum4z, sum4z);
+    _mm_store_ss(sumz, sum4z);
+}
 #endif
 
 static inline float dotp4(const float * x, const float * y, size_t len)
@@ -65,20 +86,6 @@ static inline float dotp4(const float * x, const float * y, size_t len)
                   : "r"(x), "r"(y), "r"(len)    // input
                   : "q0", "q2", "q8");        // clobber list
 
-#elif (defined(__SSE3__))
-    __m128 x4, y4;
-    __m128 sum4 = _mm_setzero_ps();
-    __m128 prod4;
-    for (size_t n = 0; n < len; n+=4) {
-        x4 = _mm_loadu_ps(&x[n]);
-        y4 = _mm_loadu_ps(&y[n]);
-        prod4 = _mm_mul_ps(x4, y4);
-        sum4 = _mm_add_ps(prod4, sum4);
-    }
-    sum4 = _mm_hadd_ps(sum4, sum4);
-    sum4 = _mm_hadd_ps(sum4, sum4);
-    _mm_store_ss(&sum, sum4);
-
 #else
     for (size_t n = 0; n < len; n++) {
         sum += x[n] * y[n];
@@ -92,7 +99,9 @@ static inline void dotp_2(float * sumy, float * sumz, float * y, float * z, floa
     float suma = 0, sumb = 0;
 #if (defined(__AVX__))
     dotp8_2(&suma, &sumb, y, z, yc, zc, len);
-#elif (defined(__SSE3__) || defined(__ARM_NEON__))
+#elif (defined(__SSE3__))
+    dotp4_2(&suma, &sumb, y, z, yc, zc, len);
+#elif (defined(__ARM_NEON__))
     suma = dotp4(y, yc, len);
     sumb = dotp4(z, zc, len);
 #else
