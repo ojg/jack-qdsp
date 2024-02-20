@@ -45,7 +45,7 @@ int create_clip(struct qdsp_t * dsp, char ** subopts)
     dsp->state = (void*)state;
 
 
-    debugprint(0,"%s subopts: %s\n", __func__, *subopts);
+    debugprint(1, "%s subopts: %s\n", __func__, *subopts);
     while (**subopts != '\0' && !errfnd) {
         switch (getsubopt(subopts, token, &value)) {
         case THRESHOLD_OPT:
@@ -55,7 +55,7 @@ int create_clip(struct qdsp_t * dsp, char ** subopts)
                 continue;
             }
             state->threshold = atof(value);
-            debugprint(0,"%s: threshold=%f\n", __func__, atof(value));
+            debugprint(1,"%s: threshold=%f\n", __func__, atof(value));
             break;
         default:
             debugprint(0, "%s: No match found for token: /%s/\n", __func__, value);
