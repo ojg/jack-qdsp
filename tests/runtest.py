@@ -2,19 +2,21 @@
 
 from numpy import *
 import os as os
-import scikits.audiolab as alab
+from scikits import audiolab
+from scipy import signal
 
 def writeaudio(data):
-    alab.wavwrite(data, 'test_in.wav', 48000, 'float32')
+    audiolab.wavwrite(data, 'test_in.wav', 48000, 'float32')
 
 
 def readaudio():
-    return alab.wavread("test_out.wav")[0]
+    return audiolab.wavread("test_out.wav")[0]
 
 
 def compareaudio(data1, data2, threshold=1e-7):
     if (abs(data1 - data2) > threshold).any():
-        print "Fail"
+        maxdev = amax(abs(data1 - data2))
+        print "Fail %f" % maxdev
         for i in range(size(data1)):
             print array((i, data1[i], data2[i]))
         quit()
@@ -87,9 +89,34 @@ def test_gate():
     compareaudio(expected, readaudio(), 2e-7)
 
 
+def test_iir():
+    print "Testing dsp-iir"
+
+    ref = concatenate(([1], zeros(511)))
+    writeaudio(ref)
+
+    #test LP2 mono
+    b, a = signal.butter(2, 100.0/24000, 'low')
+    expected = signal.lfilter(b,a,ref)
+    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p iir,lp2,f=100,q=0.7071")
+    compareaudio(expected, readaudio())
+
+    #test HP2 with gain
+    b, a = signal.butter(2, 100.0/24000, 'high')
+    expected = signal.lfilter(b,a,ref*10**(-6.0/20))
+    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p iir,hp2,f=100,q=0.7071,g=-6")
+    compareaudio(expected, readaudio())
+
+    #test HP2 stereo
+    writeaudio(transpose([ref,ref]))
+    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p iir,hp2,f=100,q=0.7071,g=-6")
+    compareaudio(transpose([expected, expected]), readaudio())
+
+
 def main():
-    ret = test_gain()
-    ret = test_gate()
+    test_gain()
+    test_gate()
+    test_iir()
     os.remove('test_in.wav')
     os.remove('test_out.wav')
 

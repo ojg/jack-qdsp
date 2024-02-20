@@ -255,7 +255,9 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
     long long validparammasks[] = {
             (1<<DIRECT_OPT) | (1<<A1_OPT) | (1<<A2_OPT) | (1<<B0_OPT) | (1<<B1_OPT) | (1<<B2_OPT),
             (1<<LP2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT) | (1<<GAIN_OPT),
+            (1<<LP2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT),
             (1<<HP2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT) | (1<<GAIN_OPT),
+            (1<<HP2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT),
             (1<<LP1_OPT) | (1<<F0_OPT),
             (1<<HP1_OPT) | (1<<F0_OPT),
             (1<<LS2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT) | (1<<GAIN_OPT),
@@ -264,7 +266,9 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
             (1<<HS1_OPT) | (1<<F0_OPT) | (1<<GAIN_OPT),
             (1<<PEQ_OPT) | (1<<F0_OPT) | (1<<Q0_OPT) | (1<<GAIN_OPT),
             (1<<LWT_OPT) | (1<<F0_OPT) | (1<<F1_OPT) | (1<<Q0_OPT) | (1<<Q1_OPT) | (1<<GAIN_OPT),
+            (1<<LWT_OPT) | (1<<F0_OPT) | (1<<F1_OPT) | (1<<Q0_OPT) | (1<<Q1_OPT),
             (1<<AP2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT) | (1<<GAIN_OPT),
+            (1<<AP2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT),
     };
 
     char *value;
@@ -276,6 +280,7 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
 
     dsp->state = (void*)state;
     dsp->process = iir_process;
+    state->gain = 0.0;
 
     debugprint(1, "%s subopts: %s\n", __func__, *subopts);
     while (**subopts != '\0' && !errfnd) {
