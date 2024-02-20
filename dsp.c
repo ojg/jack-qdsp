@@ -8,12 +8,13 @@
 #include <float.h>
 #include "dsp.h"
 
-extern int debuglevel;
-
+/*****************************************************************/
+/* Add a line to each of these blocks when adding a new dsp type */
 enum {
     GAIN_OPT = 0,
     GATE_OPT,
     IIR_OPT,
+    FIR_OPT,
     END_OPT
 };
 
@@ -21,23 +22,30 @@ char *const token[] = {
     [GAIN_OPT]   = "gain",
     [GATE_OPT]   = "gate",
     [IIR_OPT]    = "iir",
+    [FIR_OPT]    = "fir",
     NULL
 };
 
 extern int create_gate(struct qdsp_t * dsp, char ** subopts);
 extern int create_gain(struct qdsp_t * dsp, char ** subopts);
 extern int create_iir(struct qdsp_t * dsp, char ** subopts);
+extern int create_fir(struct qdsp_t * dsp, char ** subopts);
 
 extern void help_gain(void);
 extern void help_gate(void);
 extern void help_iir(void);
+extern void help_fir(void);
 
 struct dspfuncs_t dspfuncs[] = {
         [GAIN_OPT] = {.helpfunc = help_gain, .createfunc = create_gain },
         [GATE_OPT] = {.helpfunc = help_gate, .createfunc = create_gate },
         [IIR_OPT] = {.helpfunc = help_iir, .createfunc = create_iir },
+        [FIR_OPT] = {.helpfunc = help_fir, .createfunc = create_fir },
         [END_OPT] = {.helpfunc = NULL, .createfunc = NULL },
 };
+/******************************************************************/
+
+extern int debuglevel;
 
 float * pingbuf;
 
