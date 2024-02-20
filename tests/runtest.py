@@ -111,11 +111,25 @@ def test_iir():
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p iir,hp2,f=100,q=0.7071,g=-6")
     compareaudio(transpose([expected, -expected]), readaudio())
 
+def test_fir():
+    print "Testing dsp-fir"
+
+    ref = concatenate(([1], zeros(511)))
+    writeaudio(ref)
+
+    #test mono fir
+    h = signal.firwin(21, 0.4)
+    savetxt("test_coeffs_48000.txt", h)
+    expected = signal.lfilter(h, 1, ref)
+    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p fir,test_coeffs_48000.txt")
+    compareaudio(expected, readaudio())
+
 
 def main():
     test_gain()
     test_gate()
     test_iir()
+    test_fir()
     os.remove('test_in.wav')
     os.remove('test_out.wav')
 
