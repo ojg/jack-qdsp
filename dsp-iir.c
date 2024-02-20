@@ -252,7 +252,7 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
     };
 
     long long validparammasks[] = {
-            (1<<DIRECT_OPT) | (1<<A1_OPT) | (1<<A2_OPT) | (1<<B0_OPT) | (1<<B1_OPT) | (1<<B2_OPT) | (1<<GAIN_OPT),
+            (1<<DIRECT_OPT) | (1<<A1_OPT) | (1<<A2_OPT) | (1<<B0_OPT) | (1<<B1_OPT) | (1<<B2_OPT),
             (1<<LP2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT) | (1<<GAIN_OPT),
             (1<<HP2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT) | (1<<GAIN_OPT),
             (1<<LP1_OPT) | (1<<F0_OPT),
