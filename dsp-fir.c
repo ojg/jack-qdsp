@@ -6,7 +6,7 @@
 #include <math.h>
 #include "dsp.h"
 
-#if (0) //(defined(__AVX__))
+#if (defined(__AVX__))
 #include <immintrin.h>
 static inline float dotp(float * x, float * y, size_t len)
 {
@@ -35,7 +35,7 @@ static inline float dotp(float * x, float * y, size_t len)
 
     return sum;
 }
-#elif (0) //(defined(__SSE3__))
+#elif (defined(__SSE3__))
 #include <immintrin.h>
 static inline float dotp(float * x, float * y, size_t len)
 {
@@ -63,7 +63,7 @@ static inline float dotp(float * x, float * y, size_t len)
 
     return sum;
 }
-#elif (0)
+#elif (1)
 static inline float dotp(float * x, float * y, size_t len)
 {
     float sum[4] = { 0.0f };
