@@ -177,7 +177,7 @@ int main (int argc, char *argv[])
                     debuglevel = itmp;
             }
             else
-                debuglevel = 1;
+                debuglevel = 0;
             break;
         case 'h':
         case '?':
