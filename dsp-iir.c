@@ -144,8 +144,8 @@ void init_iir(struct qdsp_t * dsp)
 void iir_process(struct qdsp_t * dsp)
 {
     struct qdsp_iir_state_t * state = (struct qdsp_iir_state_t *)dsp->state;
-    unsigned int nchannels = dsp->nchannels;
-    unsigned int nframes = dsp->nframes;
+    int nchannels = dsp->nchannels;
+    int nframes = dsp->nframes;
     int c,n;
 
     switch (nchannels) {
@@ -267,7 +267,7 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
     };
 
     char *value;
-    int errfnd = 0, i;
+    int errfnd = 0;
     struct qdsp_iir_state_t * state = malloc(sizeof(struct qdsp_iir_state_t));
     long long curparammask = 0;
     int curtoken;
@@ -352,7 +352,7 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
 
     }
 
-    for (i=0; i<sizeof(validparammasks)/sizeof(validparammasks[0]); i++) {
+    for (size_t i=0; i<sizeof(validparammasks)/sizeof(validparammasks[0]); i++) {
         if (validparammasks[i] == curparammask)
             validparams = true;
     }

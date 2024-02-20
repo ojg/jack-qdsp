@@ -77,6 +77,7 @@ int bufferSizeCb(jack_nframes_t nframes, void *arg)
  */
 void jack_shutdown (void *arg)
 {
+	(void)arg;
     exit(EXIT_FAILURE);
 }
 
@@ -120,8 +121,8 @@ int main (int argc, char *argv[])
     jack_status_t status;
     struct qdsp_t *dsphead = NULL;
     struct qdsp_t *dsp = NULL;
-    unsigned int fs;
-    unsigned int channels = 1;
+    int fs;
+    int channels = 1;
     int i,c,itmp;
 
     debuglevel = 0;

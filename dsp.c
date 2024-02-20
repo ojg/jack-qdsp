@@ -36,20 +36,11 @@ extern void help_iir(void);
 extern void help_clip(void);
 
 struct dspfuncs_t dspfuncs[] = {
-        [GAIN_OPT].helpfunc     = help_gain,
-        [GAIN_OPT].createfunc   = create_gain,
-
-        [GATE_OPT].helpfunc     = help_gate,
-        [GATE_OPT].createfunc   = create_gate,
-
-        [IIR_OPT].helpfunc      = help_iir,
-        [IIR_OPT].createfunc    = create_iir,
-
-        [CLIP_OPT].helpfunc     = help_clip,
-        [CLIP_OPT].createfunc   = create_clip,
-
-        [END_OPT].helpfunc      = NULL,
-        [END_OPT].createfunc    = NULL,
+        [GAIN_OPT] = {.helpfunc = help_gain, .createfunc = create_gain },
+        [GATE_OPT] = {.helpfunc = help_gate, .createfunc = create_gate },
+        [IIR_OPT] = {.helpfunc = help_iir, .createfunc = create_iir },
+        [CLIP_OPT] = {.helpfunc = help_clip, .createfunc = create_clip },
+        [END_OPT] = {.helpfunc = NULL, .createfunc = NULL },
 };
 
 
@@ -85,11 +76,11 @@ void init_dsp(struct qdsp_t * dsphead)
     float *zerobuf;
     bool ping = false;
     struct qdsp_t * dsp;
-    unsigned int i;
+    int i;
     float * pingbuf = NULL;
     float * pongbuf;
-    unsigned int nframes = dsphead->nframes;
-    unsigned int nchannels = dsphead->nchannels;
+    int nframes = dsphead->nframes;
+    int nchannels = dsphead->nchannels;
 
     /* allocate tempbuf as one large buffer */
     pingbuf = realloc(pingbuf, (2 * nchannels + 1) * nframes * sizeof(float));

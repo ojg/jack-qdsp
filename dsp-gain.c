@@ -9,15 +9,15 @@
 struct qdsp_gain_state_t {
     float gain;
     float delay_seconds;
-    unsigned int delay_samples;
+    int delay_samples;
     float * delayline;
-    unsigned int offset;
+    int offset;
 };
 
 void gain_process(struct qdsp_t * dsp)
 {
     struct qdsp_gain_state_t * state = (struct qdsp_gain_state_t *)dsp->state;
-    unsigned int i, k=0, n=0;
+    int i, k=0, n=0;
 
     if (state->delay_samples > dsp->nframes) {
         for (i=0; i<dsp->nchannels; i++) {
