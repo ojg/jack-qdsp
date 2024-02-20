@@ -57,17 +57,17 @@ int calc_coeffs(struct qdsp_iir_state_t * state, int fs)
 
     switch (state->type) {
     case LP2_OPT:
-        b0 =  (1 - cosw0)/2;
-        b1 =   1 - cosw0;
-        b2 =  (1 - cosw0)/2;
+        b0 =  (1 - cosw0)/2 * state->gain;
+        b1 =   1 - cosw0 * state->gain;
+        b2 =  (1 - cosw0)/2 * state->gain;
         a0 =   1 + alpha;
         a1 =  -2*cosw0;
         a2 =   1 - alpha;
         break;
     case HP2_OPT:
-        b0 =  (1 + cosw0)/2;
-        b1 = -(1 + cosw0);
-        b2 =  (1 + cosw0)/2;
+        b0 =  (1 + cosw0)/2 * state->gain;
+        b1 = -(1 + cosw0) * state->gain;
+        b2 =  (1 + cosw0)/2 * state->gain;
         a0 =   1 + alpha;
         a1 =  -2*cosw0;
         a2 =   1 - alpha;
@@ -97,9 +97,9 @@ int calc_coeffs(struct qdsp_iir_state_t * state, int fs)
         a2 =   1 - alpha/A;
         break;
     case AP2_OPT:
-        b0 =   1 - alpha;
-        b1 =  -2*cosw0;
-        b2 =   1 + alpha;
+        b0 =   (1 - alpha) * state->gain;;
+        b1 =  -2*cosw0 * state->gain;;
+        b2 =   (1 + alpha) * state->gain;;
         a0 =   1 + alpha;
         a1 =  -2*cosw0;
         a2 =   1 - alpha;
@@ -252,9 +252,9 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
     };
 
     long long validparammasks[] = {
-            (1<<DIRECT_OPT) | (1<<A1_OPT) | (1<<A2_OPT) | (1<<B0_OPT) | (1<<B1_OPT) | (1<<B2_OPT),
-            (1<<LP2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT),
-            (1<<HP2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT),
+            (1<<DIRECT_OPT) | (1<<A1_OPT) | (1<<A2_OPT) | (1<<B0_OPT) | (1<<B1_OPT) | (1<<B2_OPT) | (1<<GAIN_OPT),
+            (1<<LP2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT) | (1<<GAIN_OPT),
+            (1<<HP2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT) | (1<<GAIN_OPT),
             (1<<LP1_OPT) | (1<<F0_OPT),
             (1<<HP1_OPT) | (1<<F0_OPT),
             (1<<LS2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT) | (1<<GAIN_OPT),
@@ -262,8 +262,8 @@ int create_iir(struct qdsp_t * dsp, char ** subopts)
             (1<<LS1_OPT) | (1<<F0_OPT) | (1<<GAIN_OPT),
             (1<<HS1_OPT) | (1<<F0_OPT) | (1<<GAIN_OPT),
             (1<<PEQ_OPT) | (1<<F0_OPT) | (1<<Q0_OPT) | (1<<GAIN_OPT),
-            (1<<LWT_OPT) | (1<<F0_OPT) | (1<<F1_OPT) | (1<<Q0_OPT) | (1<<Q1_OPT),
-            (1<<AP2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT),
+            (1<<LWT_OPT) | (1<<F0_OPT) | (1<<F1_OPT) | (1<<Q0_OPT) | (1<<Q1_OPT) | (1<<GAIN_OPT),
+            (1<<AP2_OPT) | (1<<F0_OPT) | (1<<Q0_OPT) | (1<<GAIN_OPT),
     };
 
     char *value;
