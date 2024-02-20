@@ -56,7 +56,6 @@ struct dspfuncs_t dspfuncs[] = {
 void create_dsp(struct qdsp_t * dsp, char * subopts)
 {
     char *value;
-    char *name = NULL;
     int errfnd = 0;
     int curtoken;
 
@@ -83,23 +82,24 @@ void create_dsp(struct qdsp_t * dsp, char * subopts)
 
 void init_dsp(struct qdsp_t * dsphead)
 {
-    const float *zerobuf;
+    float *zerobuf;
     bool ping = false;
     struct qdsp_t * dsp;
     unsigned int i;
-    float * pingbuf;
+    float * pingbuf = NULL;
     float * pongbuf;
     unsigned int nframes = dsphead->nframes;
     unsigned int nchannels = dsphead->nchannels;
 
     /* allocate tempbuf as one large buffer */
-    pingbuf = (float*)realloc(pingbuf, (2 * nchannels + 1) * nframes * sizeof(float));
+    pingbuf = realloc(pingbuf, (2 * nchannels + 1) * nframes * sizeof(float));
     if (!pingbuf) endprogram("Could not allocate memory for temporary buffer.\n");
+    /* Todo: Does realloc return NULL on fail? */
 
     /* allocate a common zerobuf */
     pongbuf = pingbuf + nchannels*nframes;
     zerobuf = pingbuf + 2*nchannels*nframes;
-    memset((float*)zerobuf, 0, nframes * sizeof(float));
+    memset(zerobuf, 0, nframes * sizeof(float));
 
     /* setup all static dsp list info */
     dsp = dsphead;

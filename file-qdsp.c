@@ -18,7 +18,7 @@ struct qdsp_t * process (unsigned int nframes, void *arg)
 {
     struct qdsp_t * dsphead = (struct qdsp_t *)arg;
     struct qdsp_t * dsp = dsphead;
-    struct qdsp_t * lastdsp;
+    struct qdsp_t * lastdsp = dsp;
 
     while (dsp)
     {
@@ -125,7 +125,6 @@ bool get_rawfileopts(SF_INFO * input_sfinfo, char * subopts)
         NULL
     };
     char *value;
-    char *name = NULL;
     int errfnd = 0;
 
     memset(input_sfinfo, 0, sizeof(*input_sfinfo));
@@ -177,7 +176,7 @@ int main (int argc, char *argv[])
     char *input_filename = NULL;
     char *output_filename = NULL;
     struct qdsp_t *dsphead = NULL;
-    struct qdsp_t *dsp;
+    struct qdsp_t *dsp = NULL;
     float *readbuf, *writebuf;
     unsigned int nframes=0, totframes=0, nframesread=0;
     bool israwinput = false;
@@ -212,12 +211,12 @@ int main (int argc, char *argv[])
             break;
         case 'p':
             if (!dsphead) {
-                dsphead = (struct qdsp_t*)malloc(sizeof(struct qdsp_t));
+                dsphead = malloc(sizeof(struct qdsp_t));
                 if (!dsphead) endprogram("Could not allocate memory for dsp.\n");
                 dsp = dsphead;
             }
             else {
-                dsp->next = (struct qdsp_t*)malloc(sizeof(struct qdsp_t));
+                dsp->next = malloc(sizeof(struct qdsp_t));
                 if (!dsp->next) endprogram("Could not allocate memory for dsp.\n");
                 dsp = dsp->next;
             }
@@ -279,13 +278,13 @@ int main (int argc, char *argv[])
     dsphead->nframes = nframes;
     init_dsp(dsphead);
 
-    readbuf = (float*)malloc(nframes*channels*sizeof(float));
-    writebuf = (float*)malloc(nframes*channels*sizeof(float));
+    readbuf = malloc(nframes*channels*sizeof(float));
+    writebuf = malloc(nframes*channels*sizeof(float));
 
     /* Run processing until EOF */
     ttot.tv_sec=0;
     ttot.tv_nsec=0;
-    while (nframesread = sf_readf_float(input_file, readbuf, nframes)) {
+    while (nframesread == sf_readf_float(input_file, readbuf, nframes)) {
         if (nframesread < nframes) {
             memset(readbuf + (nframesread * channels), 0, (nframes-nframesread) * channels * sizeof(float));
         }
