@@ -22,6 +22,12 @@ EXECUTABLE_FILE=file-qdsp
 INSTALLDIR=/usr/local/bin
 GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
 
+ifdef useopenmp
+	CFLAGS += -fopenmp
+	LDFLAGS_FILE += -lgomp
+	LDFLAGS_JACK += -lgomp
+endif
+
 .PHONY: all
 all: $(OBJECTS_DIR) $(EXECUTABLE_JACK) $(EXECUTABLE_FILE)
 

@@ -171,8 +171,10 @@ void fir_init(struct qdsp_t * dsp)
     state->offset = 0;
 
 #if defined(_OPENMP)
-    if (dsp->nchannels > 1 && state->hlen * dsp->nframes > 10000)
+    if (dsp->nchannels > 1 && state->hlen * dsp->nframes > 10000) {
         omp_set_num_threads(dsp->nchannels);
+        debugprint(0, "fir_init: Use OpenMP\n");
+    }
     else
         omp_set_num_threads(1);
 #endif
@@ -268,6 +270,14 @@ int create_fir(struct qdsp_t * dsp, char ** subopts)
     memcpy(state->coeffs, &state->coeffs[exphlen], exphlen * sizeof(float)); //duplicate reversed coeffs
     free(tempcoeffs);
     state->hlen = exphlen;
+
+#if (defined(__AVX__))
+    debugprint(0, "fir: Use AVX\n");
+#elif (defined(__SSE3__))
+    debugprint(0, "fir: Use SSE3\n");
+#elif (defined(__ARM_NEON__))
+    debugprint(0, "fir: Use ARM NEON\n");
+#endif
 
     return errfnd;
 }
