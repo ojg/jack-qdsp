@@ -38,6 +38,36 @@ static inline float dotp8(float * x, float * y, size_t len)
 
     return sum;
 }
+
+static inline void dotp8_2(float * sumy, float * sumz, float * y, float * z, float * x, size_t len)
+{
+    __m256 x8, y8, z8;
+    __m256 sum8y = _mm256_setzero_ps();
+    __m256 sum8z = _mm256_setzero_ps();
+    size_t n;
+    size_t len1 = len & ~7;
+
+    for (n = 0; n < len1; n+=8) {
+        x8 = _mm256_loadu_ps(&x[n]);
+        y8 = _mm256_loadu_ps(&y[n]);
+        z8 = _mm256_loadu_ps(&z[n]);
+#if (defined(__FMA__))
+        sum8y = _mm256_fmadd_ps(x8, y8, sum8y);
+        sum8z = _mm256_fmadd_ps(x8, z8, sum8z);
+#else
+        sum8y = _mm256_add_ps(sum8y, _mm256_mul_ps(x8, y8));
+        sum8z = _mm256_add_ps(sum8z, _mm256_mul_ps(x8, z8));
+#endif
+    }
+    sum8y = _mm256_hadd_ps(sum8y, sum8y);
+    sum8y = _mm256_hadd_ps(sum8y, sum8y);
+    _mm_store_ss(sumy, _mm_add_ps(_mm256_extractf128_ps(sum8y, 0), _mm256_extractf128_ps(sum8y, 1)));
+
+    sum8z = _mm256_hadd_ps(sum8z, sum8z);
+    sum8z = _mm256_hadd_ps(sum8z, sum8z);
+    _mm_store_ss(sumz, _mm_add_ps(_mm256_extractf128_ps(sum8z, 0), _mm256_extractf128_ps(sum8z, 1)));
+}
+
 #endif
 
 static inline float dotp4(const float * x, const float * y, size_t len)
@@ -97,6 +127,28 @@ static inline float dotp(float * x, float * y, size_t len)
     return sum;
 }
 
+static inline void dotp_2(float * sumy, float * sumz, float * y, float * z, float * x, size_t len)
+{
+    float suma = 0, sumb = 0;
+#if (defined(__AVX__))
+    size_t len1 = len & ~7;
+    dotp8_2(&suma, &sumb, y, z, x, len1);
+#else
+    size_t len1 = len & ~3;
+    for (size_t n = 0; n < len1; n++) {
+        suma += x[n] * y[n];
+        sumb += x[n] * z[n];
+    }
+#endif
+
+    for (size_t n = len1; n < len; n++) {
+        suma += x[n] * y[n];
+        sumb += x[n] * z[n];
+    }
+    *sumy = suma;
+    *sumz = sumb;
+}
+
 struct qdsp_fir_state_t {
     char * coeff_filename;
     float * delayline;
@@ -109,6 +161,23 @@ void fir_process(struct qdsp_t * dsp)
 {
     struct qdsp_fir_state_t * state = (struct qdsp_fir_state_t *)dsp->state;
     size_t offset = state->offset;
+
+    if (dsp->nchannels == 2) {
+        float * delayline0 = &state->delayline[0];
+        float * delayline1 = &state->delayline[state->hlen];
+        for (int s = 0; s < dsp->nframes; s++) {
+            float * coeffs = &state->coeffs[state->hlen - 1 - offset];
+            delayline0[offset] = dsp->inbufs[0][s];
+            delayline1[offset] = dsp->inbufs[1][s];
+            dotp_2(&dsp->outbufs[0][s], &dsp->outbufs[1][s], delayline0, delayline1, coeffs, state->hlen);
+            //dsp->outbufs[0][s] = dotp(coeffs, delayline0, state->hlen);
+            //dsp->outbufs[1][s] = dotp(coeffs, delayline1, state->hlen);
+            if (++offset == state->hlen)
+                offset = 0;
+        }
+        state->offset = offset;
+        return;
+    }
 
 #if defined(_OPENMP)
     #pragma omp parallel for firstprivate(offset) lastprivate(offset)
