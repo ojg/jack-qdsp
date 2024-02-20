@@ -79,7 +79,8 @@ int bufferSizeCb(jack_nframes_t nframes, void *arg)
  */
 void jack_shutdown (void *arg)
 {
-	(void)arg;
+    struct qdsp_t * dsphead = (struct qdsp_t *)arg;
+    destroy_dsp(dsphead);
     exit(EXIT_FAILURE);
 }
 
@@ -226,7 +227,7 @@ int main (int argc, char *argv[])
 
     jack_set_buffer_size_callback (client, bufferSizeCb, dsphead);
 
-    jack_on_shutdown (client, jack_shutdown, 0);
+    jack_on_shutdown (client, jack_shutdown, dsphead);
 
     /* Get the current samplerate and buffersize. */
     dsphead->nchannels = channels;
@@ -303,6 +304,7 @@ int main (int argc, char *argv[])
 
     /* Just to be safe */
     jack_client_close (client);
+    destroy_dsp(dsphead);
     exit (0);
 }
 

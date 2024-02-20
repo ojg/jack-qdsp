@@ -93,6 +93,10 @@ void gate_init(struct qdsp_t * dsp)
     }
 }
 
+void destroy_gate(struct qdsp_t * dsp)
+{
+    free(dsp->state);
+}
 
 int create_gate(struct qdsp_t * dsp, char ** subopts)
 {
@@ -146,6 +150,7 @@ int create_gate(struct qdsp_t * dsp, char ** subopts)
 
     dsp->process = gate_process;
     dsp->init = gate_init;
+    dsp->destroy = destroy_gate;
 
     return errfnd;
 }

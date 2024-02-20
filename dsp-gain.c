@@ -69,6 +69,13 @@ void gain_init(struct qdsp_t * dsp)
     memset(state->delayline, 0, state->delay_samples * dsp->nchannels * sizeof(float));
 }
 
+void destroy_gain(struct qdsp_t * dsp)
+{
+    struct qdsp_gain_state_t * state = (struct qdsp_gain_state_t *)dsp->state;
+    free(state->delayline);
+    free(dsp->state);
+}
+
 int create_gain(struct qdsp_t * dsp, char ** subopts)
 {
     enum {
@@ -90,6 +97,7 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
     dsp->state = (void*)state;
 
     // default values
+    state->delayline = NULL;
     state->delay_seconds = 0;
     state->gain = 1.0f;
     state->offset = 0;
@@ -142,6 +150,7 @@ int create_gain(struct qdsp_t * dsp, char ** subopts)
     }
     dsp->process = gain_process;
     dsp->init = gain_init;
+    dsp->destroy = destroy_gain;
 
     return errfnd;
 }
