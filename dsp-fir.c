@@ -18,21 +18,40 @@ void fir_process(struct qdsp_t * dsp)
 {
     struct qdsp_fir_state_t * state = (struct qdsp_fir_state_t *)dsp->state;
 
-    for (int s = 0; s < dsp->nframes; s++) {
-        float * coeffs = &state->coeffs[state->offset];
-        for (int c = 0; c < dsp->nchannels; c++) {
-            float * delayline  = &state->delayline[state->hlen * c];
-            delayline[state->offset] = dsp->inbufs[c][s];
-            float sum = 0;
+    if (dsp->nchannels == 2) {
+        float * delayline0  = state->delayline;
+        float * delayline1  = &state->delayline[state->hlen];
+        for (int s = 0; s < dsp->nframes; s++) {
+            float * coeffs = &state->coeffs[state->offset];
+            delayline0[state->offset] = dsp->inbufs[0][s];
+            delayline1[state->offset] = dsp->inbufs[1][s];
+            float sum0 = 0, sum1 = 0;
             for (unsigned n = 0; n < state->hlen; n++) {
-                sum += coeffs[n] * delayline[n];
+                sum0 += coeffs[n] * delayline0[n];
+                sum1 += coeffs[n] * delayline1[n];
             }
-            dsp->outbufs[c][s] = sum;
+            dsp->outbufs[0][s] = sum0;
+            dsp->outbufs[1][s] = sum1;
+            if (++state->offset == state->hlen)
+                state->offset = 0;
         }
-        if (++state->offset == state->hlen)
-            state->offset = 0;
     }
-
+    else {
+        for (int s = 0; s < dsp->nframes; s++) {
+            float * coeffs = &state->coeffs[state->offset];
+            for (int c = 0; c < dsp->nchannels; c++) {
+                float * delayline  = &state->delayline[state->hlen * c];
+                delayline[state->offset] = dsp->inbufs[c][s];
+                float sum = 0;
+                for (unsigned n = 0; n < state->hlen; n++) {
+                    sum += coeffs[n] * delayline[n];
+                }
+                dsp->outbufs[c][s] = sum;
+            }
+            if (++state->offset == state->hlen)
+                state->offset = 0;
+        }
+    }
 }
 
 void fir_init(struct qdsp_t * dsp)
@@ -104,7 +123,8 @@ int create_fir(struct qdsp_t * dsp, char ** subopts)
     }
 
     size_t i = 0;
-    state->coeffs = malloc(256 * sizeof(float)); //initial size of coeffs
+    state->hlen = 256;
+    state->coeffs = malloc(state->hlen * sizeof(float)); //initial size of coeffs
     while (!feof(fid)) {
         if (fscanf(fid, "%f\n", &state->coeffs[i]) != 1) {
             debugprint(0, "%s: Read error in file: %s\n", __func__, state->coeff_filename);
@@ -112,8 +132,10 @@ int create_fir(struct qdsp_t * dsp, char ** subopts)
             errfnd = 1;
             break;
         }
-        if (++i == 256)
-            state->coeffs = realloc(state->coeffs, i * 2 * sizeof(float)); //realloc if size grows
+        if (++i == state->hlen) {
+            state->hlen = i * 2;
+            state->coeffs = realloc(state->coeffs, state->hlen * sizeof(float)); //realloc if size grows
+        }
     }
     fclose(fid);
     state->hlen = i;

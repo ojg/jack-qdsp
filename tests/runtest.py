@@ -127,7 +127,7 @@ def test_fir():
 
     #test long mono fir
     writeaudio(ref)
-    h = signal.firwin(73, 0.4)
+    h = signal.firwin(311, 0.4)
     savetxt("test_coeffs.txt", h)
     expected = signal.lfilter(h, 1, ref)
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
@@ -143,7 +143,7 @@ def test_fir():
 
     #test long stereo fir, mono coeffs
     writeaudio(transpose([ref,-ref]))
-    h = signal.firwin(75, 0.4)
+    h = signal.firwin(311, 0.4)
     savetxt("test_coeffs.txt", h)
     expected = signal.lfilter(h, 1, ref)
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
@@ -156,7 +156,6 @@ def benchmarks():
     print "Benchmarking"
 
     #mono benchmark
-    ref = concatenate(([1], zeros(511)))
     ref = concatenate(([1], zeros(131072-1)))
     writeaudio(ref)
     h = signal.firwin(8191, 0.4)
