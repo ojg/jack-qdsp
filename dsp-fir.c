@@ -6,7 +6,36 @@
 #include <math.h>
 #include "dsp.h"
 
-#if (0) //defined(__SSE3__))
+#if (0) //(defined(__AVX__))
+#include <immintrin.h>
+static inline float dotp(float * x, float * y, size_t len)
+{
+    __m256 x4, y4;
+    __m256 sum4 = _mm256_setzero_ps();
+    float sum;
+    size_t n;
+    size_t len1 = len - (len % 8);
+
+    for (n = 0; n < len1; n+=8) {
+        x4 = _mm256_loadu_ps(&x[n]);
+        y4 = _mm256_loadu_ps(&y[n]);
+#if (defined(__FMA__))
+        sum4 = _mm256_fmadd_ps(x4, y4, sum4);
+#else
+        prod4 = _mm256_mul_ps(x4, y4);
+        sum4 = _mm256_add_ps(prod4, sum4);
+#endif
+    }
+    sum4 = _mm256_hadd_ps(sum4, sum4);
+    sum4 = _mm256_hadd_ps(sum4, sum4);
+    _mm_store_ss(&sum, _mm_add_ps(_mm256_extractf128_ps(sum4, 0), _mm256_extractf128_ps(sum4, 1)));
+
+    for (; n < len; n++)
+        sum += x[n] * y[n];
+
+    return sum;
+}
+#elif (0) //(defined(__SSE3__))
 #include <immintrin.h>
 static inline float dotp(float * x, float * y, size_t len)
 {
@@ -22,12 +51,8 @@ static inline float dotp(float * x, float * y, size_t len)
     for (n = 0; n < len1; n+=4) {
         x4 = _mm_loadu_ps(&x[n]);
         y4 = _mm_loadu_ps(&y[n]);
-#if (defined(__FMA__))
-        sum4 = _mm_fmadd_ps(x4, y4, sum4);
-#else
         prod4 = _mm_mul_ps(x4, y4);
         sum4 = _mm_add_ps(prod4, sum4);
-#endif
     }
     sum4 = _mm_hadd_ps(sum4, sum4);
     sum4 = _mm_hadd_ps(sum4, sum4);
