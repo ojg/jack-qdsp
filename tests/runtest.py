@@ -36,6 +36,30 @@ def test_gain():
     #compare results
     compareaudio(expected, res)
 
+    #create reference output
+    expected = concatenate((zeros(48), ref[0:-48]))
+
+    #run file-qdsp
+    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p gain,d=0.001")
+
+    #read result file
+    res = readaudio()
+
+    #compare results
+    compareaudio(expected, res)
+
+    #create reference output
+    expected = concatenate((zeros(96), ref[0:-96]))
+
+    #run file-qdsp
+    os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p gain,d=0.002")
+
+    #read result file
+    res = readaudio()
+
+    #compare results
+    compareaudio(expected, res)
+
 
 def main():
     test_gain()
