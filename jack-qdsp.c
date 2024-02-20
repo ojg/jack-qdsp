@@ -129,7 +129,7 @@ int main (int argc, char *argv[])
     struct qdsp_t *dsphead = NULL;
     struct qdsp_t *dsp = NULL;
     int fs;
-    int channels = 1;
+    int channels = 0;
     int i,c,itmp;
 
     debuglevel = 0;
@@ -286,11 +286,17 @@ int main (int argc, char *argv[])
         char * token = strtok(input_ports,",");
         i=0;
         while (token) {
-            debugprint(0, "Connecting to input %s\n", token);
-            if (jack_connect (client, token, jack_port_name (input_port[i++]))) {
-                debugprint(0, "cannot connect input ports\n");
+            if (i >= channels) {
+                debugprint(0, "error: channels > 1 and number of input ports > number of channels!");
+                jack_client_close (client);
+                exit(1);
             }
-            token = strtok(NULL, ",");
+			debugprint(0, "Connecting to input %s\n", token);
+			if (jack_connect (client, token, jack_port_name (input_port[i]))) {
+				debugprint(0, "cannot connect input port with %s\n", token);
+			}
+			token = strtok(NULL, ",");
+			if (channels > 1) i++;
         }
     }
 
@@ -298,11 +304,17 @@ int main (int argc, char *argv[])
         char * token = strtok(output_ports,",");
         i=0;
         while (token) {
+            if (i >= channels) {
+                debugprint(0, "error: number of input ports > number of channels!");
+                jack_client_close (client);
+                exit(1);
+            }
             debugprint(0, "Connecting to output %s\n", token);
-            if (jack_connect (client, jack_port_name (output_port[i++]), token)) {
-                debugprint(0, "cannot connect output ports\n");
+            if (jack_connect (client, jack_port_name (output_port[i]), token)) {
+                debugprint(0, "cannot connect output port with %s\n", token);
             }
             token = strtok(NULL, ",");
+            if (channels > 1) i++;
         }
     }
 
