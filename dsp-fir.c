@@ -22,11 +22,11 @@ void fir_process(struct qdsp_t * dsp)
         offset = state->offset;
         float * delayline = &state->delayline[state->hlen * c];
         for (int s = 0; s < dsp->nframes; s++) {
-            float * coeffs = &state->coeffs[offset];
+            float * coeffs = &state->coeffs[state->hlen - 1 - offset];
             delayline[offset] = dsp->inbufs[c][s];
             float sum = 0;
-            for (size_t n = 0, k = state->hlen; n < state->hlen; n++, k--) {
-                sum += coeffs[k] * delayline[n];
+            for (size_t n = 0; n < state->hlen; n++) {
+                sum += coeffs[n] * delayline[n];
             }
             dsp->outbufs[c][s] = sum;
             if (++offset == state->hlen)
@@ -123,10 +123,9 @@ int create_fir(struct qdsp_t * dsp, char ** subopts)
     debugprint(2, "%s: state->hlen=%d\n", __func__, state->hlen);
     debugprint(2, "%s: state->coeff[1]=%e\n", __func__, state->coeffs[1]);
     state->coeffs = realloc(state->coeffs, state->hlen * 2 * sizeof(float)); //realloc to final size * 2
-    memcpy(&state->coeffs[state->hlen], state->coeffs, state->hlen * sizeof(float)); //duplicate coeffs*/
-/*    for (i = 0; i < state->hlen; i++)
-        state->coeffs[state->hlen * 2 - i - 1] = state->coeffs[i]; //reverse coeffs
-    memcpy(state->coeffs, &state->coeffs[state->hlen], state->hlen * sizeof(float)); //duplicate coeffs*/
+    for (i = 0; i < state->hlen; i++)
+        state->coeffs[state->hlen * 2 - i - 1] = state->coeffs[i]; //reverse coeffs for second half
+    memcpy(state->coeffs, &state->coeffs[state->hlen], state->hlen * sizeof(float)); //duplicate reversed coeffs
 
     return errfnd;
 }
