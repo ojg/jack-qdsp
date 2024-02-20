@@ -58,7 +58,7 @@ int calc_coeffs(struct qdsp_iir_state_t * state, int fs)
     switch (state->type) {
     case LP2_OPT:
         b0 =  (1 - cosw0)/2 * state->gain;
-        b1 =   1 - cosw0 * state->gain;
+        b1 =  (1 - cosw0) * state->gain;
         b2 =  (1 - cosw0)/2 * state->gain;
         a0 =   1 + alpha;
         a1 =  -2*cosw0;
