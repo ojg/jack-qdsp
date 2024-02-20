@@ -12,6 +12,7 @@ OBJECTS_FILE=$(patsubst %.c, $(OBJECTS_DIR)/%.o, $(SOURCES_FILE))
 EXECUTABLE_JACK=jack-qdsp
 EXECUTABLE_FILE=file-qdsp
 INSTALLDIR=/usr/local/bin
+GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
 
 .PHONY: all
 all: $(OBJECTS_DIR) $(EXECUTABLE_JACK) $(EXECUTABLE_FILE)
@@ -26,7 +27,7 @@ $(EXECUTABLE_FILE): $(OBJECTS_FILE)
 	$(CC) $(OBJECTS_FILE) -o $@ $(LDFLAGS_FILE)
 
 $(OBJECTS_DIR)/%.o: %.c $(DEPS)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -DVERSION=\"$(GIT_VERSION)\" -c $< -o $@
 
 install:	all
 	sudo install -Dm 755 $(EXECUTABLE_JACK) $(INSTALLDIR)/$(EXECUTABLE_JACK)
