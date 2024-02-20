@@ -15,39 +15,14 @@
 #endif
 
 #if (defined(__AVX__))
-static inline float dotp8(float * x, float * y, size_t len)
-{
-    __m256 x8, y8;
-    __m256 sum8 = _mm256_setzero_ps();
-    float sum;
-    size_t n;
-    size_t len1 = len & ~7;
-
-    for (n = 0; n < len1; n+=8) {
-        x8 = _mm256_loadu_ps(&x[n]);
-        y8 = _mm256_loadu_ps(&y[n]);
-#if (defined(__FMA__))
-        sum8 = _mm256_fmadd_ps(x8, y8, sum8);
-#else
-        sum8 = _mm256_add_ps(sum8, _mm256_mul_ps(x8, y8));
-#endif
-    }
-    sum8 = _mm256_hadd_ps(sum8, sum8);
-    sum8 = _mm256_hadd_ps(sum8, sum8);
-    _mm_store_ss(&sum, _mm_add_ps(_mm256_extractf128_ps(sum8, 0), _mm256_extractf128_ps(sum8, 1)));
-
-    return sum;
-}
-
 static inline void dotp8_2(float * sumy, float * sumz, float * y, float * z, float * yc, float * zc, size_t len)
 {
     __m256 yc8, zc8, y8, z8;
     __m256 sum8y = _mm256_setzero_ps();
     __m256 sum8z = _mm256_setzero_ps();
     size_t n;
-    size_t len1 = len & ~7;
 
-    for (n = 0; n < len1; n+=8) {
+    for (n = 0; n < len; n+=8) {
         yc8 = _mm256_loadu_ps(&yc[n]);
         zc8 = _mm256_loadu_ps(&zc[n]);
         y8 = _mm256_loadu_ps(&y[n]);
@@ -112,28 +87,16 @@ static inline float dotp4(const float * x, const float * y, size_t len)
     return sum;
 }
 
-static inline float dotp(float * x, float * y, size_t len)
-{
-#if (defined(__AVX__))
-    size_t len1 = len & ~7;
-    float sum = dotp8(x, y, len1);
-#else
-    size_t len1 = len & ~3;
-    float sum = dotp4(x, y, len1);
-#endif
-
-    return sum;
-}
-
 static inline void dotp_2(float * sumy, float * sumz, float * y, float * z, float * yc, float * zc, size_t len)
 {
     float suma = 0, sumb = 0;
 #if (defined(__AVX__))
-    size_t len1 = len & ~7;
-    dotp8_2(&suma, &sumb, y, z, yc, zc, len1);
+    dotp8_2(&suma, &sumb, y, z, yc, zc, len);
+#elif (defined(__SSE3__) || defined(__ARM_NEON__))
+    suma = dotp4(y, yc, len);
+    sumb = dotp4(z, zc, len);
 #else
-    size_t len1 = len & ~3;
-    for (size_t n = 0; n < len1; n++) {
+    for (size_t n = 0; n < len; n++) {
         suma += y[n] * yc[n];
         sumb += z[n] * zc[n];
     }
@@ -164,8 +127,6 @@ void fir_process(struct qdsp_t * dsp)
             delayline0[offset] = dsp->inbufs[0][s];
             delayline1[offset] = dsp->inbufs[1][s];
             dotp_2(&dsp->outbufs[0][s], &dsp->outbufs[1][s], delayline0, delayline1, coeffs, coeffs, state->hlen);
-            //dsp->outbufs[0][s] = dotp(coeffs, delayline0, state->hlen);
-            //dsp->outbufs[1][s] = dotp(coeffs, delayline1, state->hlen);
             if (++offset == state->hlen)
                 offset = 0;
         }
@@ -183,9 +144,6 @@ void fir_process(struct qdsp_t * dsp)
             float * coeffs = &state->coeffs[state->hlen - 1 - offset];
             float suma, sumb = 0;
             delayline[offset] = dsp->inbufs[c][s];
-            //dsp->outbufs[c][s] = dotp(coeffs, delayline, state->hlen);
-            //suma = dotp(coeffs, delayline, state->hlen/2);
-            //sumb = dotp(coeffs+state->hlen/2, delayline+state->hlen/2, state->hlen/2);
             dotp_2(&suma, &sumb, delayline, delayline+state->hlen/2, coeffs, coeffs+state->hlen/2, state->hlen/2);
             dsp->outbufs[c][s] = suma + sumb;
             if (++offset == state->hlen)
