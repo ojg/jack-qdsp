@@ -18,6 +18,6 @@ jobs:
     - name: make file-qdsp
       run: make file-qdsp
     - name: Install python packages
-      run: pip install numpy && pip install scipy && pip install soundfile
+      run: pip install numpy scipy soundfile
     - name: make test
       run: make test
