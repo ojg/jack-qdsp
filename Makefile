@@ -41,7 +41,7 @@ $(EXECUTABLE_FILE): $(OBJECTS_FILE)
 	$(CC) $(OBJECTS_FILE) -o $@ $(LDFLAGS_FILE)
 
 $(OBJECTS_DIR)/%.o: %.c $(DEPS)
-	$(CC) $(CFLAGS) -DVERSION=\"$(GIT_VERSION)\" -c $< -o $@ > $@.s
+	$(CC) $(CFLAGS) -D 'VERSION="$(GIT_VERSION)"' -c $< -o $@ > $@.s
 
 install:	all
 	sudo install -Dm 755 $(EXECUTABLE_JACK) $(INSTALLDIR)/$(EXECUTABLE_JACK)
