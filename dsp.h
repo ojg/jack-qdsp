@@ -1,5 +1,3 @@
-#ifndef DSP_H
-#define DSP_H
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -31,6 +29,8 @@ void init_dsp(struct qdsp_t * dsphead);
 void destroy_dsp(struct qdsp_t * dsphead);
 void endprogram(char * str);
 void debugprint(int level, const char * fmt, ...);
+int get_debuglevel(void);
+struct dspfuncs_t * get_dspfuncs(void);
 
 #ifndef DEBUGLEVEL
 #define DEBUGLEVEL 0
@@ -57,4 +57,3 @@ void debugprint(int level, const char * fmt, ...);
 #endif
 
 
-#endif

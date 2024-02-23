@@ -13,7 +13,10 @@
 #include "dsp.h"
 
 int debuglevel;
-extern struct dspfuncs_t dspfuncs[];
+int get_debuglevel(void)
+{
+    return debuglevel;    
+}
 
 struct qdsp_t * process (unsigned int nframes, void *arg)
 {
@@ -50,6 +53,7 @@ void print_help()
     debugprint(0, "    c=channels\n    r=samplerate in Hz\n    f=format 1=S8,2=S16,3=S24,4=S32,5=U8,6=F32\n");
     debugprint(0, "\nDSP options\n");
 
+    struct dspfuncs_t * dspfuncs = get_dspfuncs();
     while (dspfuncs[i].helpfunc) {
         dspfuncs[i++].helpfunc();
         debugprint(0,  "\n");

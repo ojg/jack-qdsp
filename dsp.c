@@ -45,7 +45,10 @@ struct dspfuncs_t dspfuncs[] = {
 };
 /******************************************************************/
 
-extern int debuglevel;
+struct dspfuncs_t * get_dspfuncs(void)
+{
+    return dspfuncs;
+}
 
 float * pingbuf;
 
@@ -139,7 +142,7 @@ void endprogram(char * str)
 
 void debugprint(int level, const char * fmt, ...)
 {
-    if (level <= debuglevel) {
+    if (level <= get_debuglevel()) {
         va_list ap;
         va_start(ap, fmt);
         vfprintf(stderr, fmt ,ap);

@@ -13,8 +13,12 @@
 jack_port_t *input_port[NCHANNELS_MAX];
 jack_port_t *output_port[NCHANNELS_MAX];
 jack_client_t *client;
+
 int debuglevel;
-extern struct dspfuncs_t dspfuncs[];
+int get_debuglevel(void)
+{
+    return debuglevel;    
+}
 
 /**
  * The process callback for this JACK application is called in a
@@ -97,6 +101,7 @@ void print_help()
     debugprint(0, " -o output ports\n");
     debugprint(0, "\nDSP options\n");
 
+    struct dspfuncs_t * dspfuncs = get_dspfuncs();
     while (dspfuncs[i].helpfunc) {
         dspfuncs[i++].helpfunc();
         debugprint(0,  "\n");
