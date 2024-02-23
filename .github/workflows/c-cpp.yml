@@ -17,5 +17,7 @@ jobs:
       run: sudo apt-get install -y libsndfile1-dev
     - name: make file-qdsp
       run: make file-qdsp
+    - name: Install python packages
+      run: pip install numpy && pip install scipy && pip install soundfile
     - name: make test
       run: make test
