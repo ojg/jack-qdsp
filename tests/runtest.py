@@ -129,7 +129,6 @@ def test_fir():
     h = signal.firwin(21, 0.4)
     savetxt("test_coeffs.txt", h)
     expected = signal.lfilter(h, 1, ref)
-    writeaudio(expected, 'expected.wav')
     os.system("../file-qdsp -n 64 -i test_in.wav -o test_out.wav -p fir,h=test_coeffs.txt")
     compareaudio(expected, readaudio(), 1e-6)
 
@@ -179,6 +178,17 @@ def test_fir():
 
     os.remove('test_coeffs.txt')
 
+def test_signal():
+    print("Testing dsp-signal")
+
+    #create reference output
+    t = linspace(0,1-1/48000,48000)
+    expected = sin(2*pi*1000*t)
+
+    #run file-qdsp
+    os.system("../file-qdsp -n 64 -i /dev/zero -o test_out.wav -p siggen,sine,f=1000,a=1.0")
+    compareaudio(expected, readaudio(), 1e-6)
+
 
 def benchmarks():
     print("Benchmarking")
@@ -216,6 +226,7 @@ def main():
         test_gate()
         test_iir()
         test_fir()
+#        test_signal()
 
     os.remove('test_in.wav')
     os.remove('test_out.wav')
