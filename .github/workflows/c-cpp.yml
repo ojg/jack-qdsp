@@ -13,7 +13,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: make
-      run: make
+    - name: make file-qdsp
+      run: make file-qdsp
     - name: make test
       run: make test
